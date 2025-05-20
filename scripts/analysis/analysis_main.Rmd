@@ -1,0 +1,154 @@
+---
+title: "DeSC-Nalmefene 解析レポート"
+author: "Devin"
+date: "`r format(Sys.time(), '%Y-%m-%d')`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: cosmo
+    highlight: tango
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 10,
+  fig.height = 7
+)
+
+# 必要なパッケージのインストール確認と読み込み
+required_packages <- c("dplyr", "tidyr", "ggplot2", "gtsummary", "flextable", "mice", "epiR")
+for (pkg in required_packages) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    install.packages(pkg, repos = "https://cloud.r-project.org/")
+  }
+  library(pkg, character.only = TRUE)
+}
+
+# スクリプトのディレクトリを特定
+script_dir <- dirname(knitr::current_input())
+repo_root <- normalizePath(dirname(dirname(script_dir)))
+message("リポジトリルート: ", repo_root)
+
+# データの読み込み
+baseline_path <- file.path(repo_root, "data", "processed", "baseline.rds")
+followup_long_path <- file.path(repo_root, "data", "processed", "followup_long.rds")
+continuation_path <- file.path(repo_root, "data", "processed", "continuation.rds")
+
+message("ベースラインデータパス: ", baseline_path)
+message("ファイルの存在確認: ", file.exists(baseline_path))
+
+# データファイルの存在確認
+if (file.exists(baseline_path)) {
+  baseline <- readRDS(baseline_path)
+} else {
+  # データが存在しない場合、エラーメッセージを表示
+  message("ベースラインデータが見つかりません。前処理スクリプトを実行してください。")
+  baseline <- NULL
+}
+
+if (file.exists(followup_long_path)) {
+  followup_long <- readRDS(followup_long_path)
+} else {
+  message("フォローアップデータが見つかりません。")
+  followup_long <- NULL
+}
+
+if (file.exists(continuation_path)) {
+  continuation <- readRDS(continuation_path)
+} else {
+  message("治療継続データが見つかりません。")
+  continuation <- NULL
+}
+
+# 子スクリプトの読み込み
+source(file.path(script_dir, "table1_generator.R"))
+```
+
+## 1. はじめに
+
+本レポートは、DeSCデータベースを用いたアルコール依存症患者に対する飲酒量低減治療の現況・早期介入としての意義・転帰に関する観察研究の解析結果をまとめたものです。
+
+## 2. データ概要
+
+```{r data-summary}
+# ベースラインデータの概要
+if (!is.null(baseline)) {
+  cat("### ベースラインデータ\n\n")
+  cat(sprintf("- 患者数: %d\n", nrow(baseline)))
+  cat(sprintf("- 変数数: %d\n", ncol(baseline)))
+  
+  # 治療群別の患者数
+  if ("treatment_group" %in% names(baseline)) {
+    treatment_counts <- baseline %>%
+      count(treatment_group) %>%
+      mutate(treatment_label = case_when(
+        treatment_group == 1 ~ "飲酒量低減治療",
+        treatment_group == 2 ~ "断酒治療",
+        treatment_group == 3 ~ "薬物療法なし",
+        TRUE ~ NA_character_
+      ))
+    
+    knitr::kable(treatment_counts, col.names = c("治療群", "患者数", "治療群ラベル"),
+          caption = "治療群ごとの患者数")
+  }
+} else {
+  cat("ベースラインデータが利用できません。\n")
+}
+
+# フォローアップデータの概要
+if (!is.null(followup_long)) {
+  cat("\n### フォローアップデータ\n\n")
+  cat(sprintf("- 観察数: %d\n", nrow(followup_long)))
+  
+  if ("week" %in% names(followup_long)) {
+    week_counts <- followup_long %>%
+      count(week) %>%
+      arrange(week)
+    
+    knitr::kable(week_counts, col.names = c("週", "観察数"),
+          caption = "週ごとの観察数")
+  }
+} else {
+  cat("フォローアップデータが利用できません。\n")
+}
+```
+
+## 3. ベースライン特性
+
+### 3.1 Table 1: 対象者のベースライン特性
+
+```{r baseline-table1, results='asis'}
+if (!is.null(baseline)) {
+  # 多重代入による欠測値の補完
+  imputed <- impute_missing_values(baseline)
+  
+  # Table 1の生成
+  table1 <- generate_table1(imputed$imputed_data, "outputs/tables")
+  
+  # 表示
+  cat("Table 1は 'outputs/tables/table1.html' および 'outputs/tables/table1.docx' に保存されました。\n")
+} else {
+  cat("ベースラインデータが利用できないため、Table 1を生成できません。\n")
+}
+```
+
+## 4. 今後の展開
+
+本MVPでは、Table 1（対象者のベースライン特性）の生成を実装しました。今後、以下の機能を追加する予定です：
+
+1. Table 2: 飲酒量低減治療を提供する医療機関の特徴
+2. Table 3: 併存疾患・医療利用度
+3. Figure 1: 研究対象者選択フローチャート
+4. Figure 5: Kaplan-Meier曲線（治療継続率）
+
+## 5. 参考文献
+
+1. Higuchi, S. et al., 2014. Acceptance of controlled drinking among treatment specialists of alcohol dependence in Japan. *Alcohol and alcoholism*, 49(4), pp.447–452.
+2. Miyata, H. et al., 2019. Nalmefene in alcohol-dependent patients with a high drinking risk: Randomized controlled trial. *Psychiatry and clinical neurosciences*, 73(11), pp.697–706.
+3. World Health Organization, 2019. *Global Status Report on Alcohol and Health 2018*, World Health Organization.
+```

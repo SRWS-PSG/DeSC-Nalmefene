@@ -1,6 +1,19 @@
 # DeSC
 SRWS-PSGで、DeSCの処理コードを共有するためのレポジトリです。マスタ以外のデータや処理済のファイルはこのレポジトリ外で管理してください（.gitignoreで指定）。
 
+# DeSC-Nalmefene 解析コード
+
+## 概要
+
+このリポジトリは、DeSCデータベースを用いたアルコール依存症患者に対する飲酒量低減治療の現況・早期介入としての意義・転帰に関する観察研究のための解析コードを提供します。
+
+## 研究目的
+
+1. 飲酒量低減治療を受けている患者のベースライン特性を明らかにする
+2. 飲酒量低減治療が行われる医療機関の特徴を把握する
+3. 飲酒量低減治療がアルコール依存症への早期介入に寄与しているかを評価する
+4. 治療開始前後の肝機能・生活習慣・飲酒行動等の転帰を3群（飲酒量低減目標治療群、断酒目標治療群、治療目標不明群）で比較する
+
 # 注意
 Clineを使うことを前提に、メモリーバンクを設定しています
 https://docs.cline.bot/improving-your-prompting-skills/custom-instructions-library/cline-memory-bank
@@ -59,6 +72,29 @@ https://docs.cline.bot/improving-your-prompting-skills/custom-instructions-libra
 - `m_version.feather` - マスターバージョン管理
 - `m_version_drug.feather` - 医薬品マスターバージョン管理
 
+## 解析コードのディレクトリ構造
+
+```
+DeSC-Nalmefene/
+├── data/
+│   ├── raw/          # 生データへのリンク（バージョン管理外）
+│   ├── interim/      # 中間処理データ
+│   └── processed/    # 解析用データセット
+├── scripts/
+│   ├── preprocessing/
+│   │   ├── python/   # Python前処理スクリプト
+│   │   └── r/        # R前処理スクリプト
+│   ├── analysis/     # 解析スクリプト
+│   ├── helpers/      # ユーティリティ関数
+│   └── validation/   # データ検証関数
+├── outputs/
+│   ├── logs/         # 処理ログ
+│   ├── reports/      # 生成されたレポート
+│   ├── figures/      # 生成された図
+│   └── tables/       # 生成された表
+└── README.md         # プロジェクト概要
+```
+
 # 環境設定手順
 
 このプロジェクトでは、データファイルをリポジトリ外部に保存しています。以下の手順で環境を設定できます。
@@ -84,8 +120,8 @@ https://docs.cline.bot/improving-your-prompting-skills/custom-instructions-libra
 
 1. リポジトリをクローンする
    ```bash
-   git clone https://github.com/[ユーザー名]/DeSC.git
-   cd DeSC
+   git clone https://github.com/SRWS-PSG/DeSC-Nalmefene.git
+   cd DeSC-Nalmefene
    ```
 
 2. 必要なパッケージをインストールする
@@ -109,14 +145,77 @@ https://docs.cline.bot/improving-your-prompting-skills/custom-instructions-libra
 
 4. 出力ディレクトリが存在しない場合は作成
    ```bash
-   mkdir D:\DeSC_output  # Windowsの場合、実際のパスに置き換え
+   mkdir -p data/{raw,interim,processed}
+   mkdir -p outputs/{logs,reports,figures,tables}
    ```
+
+## 前提条件
+
+### Python環境
+
+- Python 3.9以上
+- 必要なパッケージ:
+  - polars
+  - pyarrow
+  - psutil
+  - tqdm
+
+### R環境
+
+- R 4.0.0以上
+- 必要なパッケージ:
+  - dplyr
+  - tidyr
+  - arrow
+  - gtsummary
+  - flextable
+  - officer
+  - mice
+  - epiR
+
+## 解析コードの使用方法
+
+### 1. データ前処理
+
+Python前処理スクリプトを実行して、DeSCデータベースから中間データを作成します:
+
+```bash
+python scripts/preprocessing/python/process_desc_data.py
+```
+
+次に、R前処理スクリプトを実行して、解析用データセットを作成します:
+
+```bash
+Rscript scripts/preprocessing/r/create_analysis_datasets.R
+```
+
+### 2. 解析の実行
+
+R Markdownを使用して解析レポートを生成します:
+
+```bash
+Rscript -e "rmarkdown::render('scripts/analysis/analysis_main.Rmd', output_dir = 'outputs/reports')"
+```
+
+または、個別の解析スクリプトを実行します:
+
+```bash
+Rscript scripts/analysis/table1_generator.R
+```
+
+## 出力ファイル
+
+- `outputs/tables/table1.html`: ベースライン特性比較表（HTML形式）
+- `outputs/tables/table1.docx`: ベースライン特性比較表（Word形式）
+- `outputs/reports/analysis_main.html`: 解析レポート
 
 ## 注意事項
 
 - データディレクトリには、masterフォルダと同様のデータファイルが必要です
 - `.env` ファイルはバージョン管理対象外のため、各自の環境に合わせて設定してください
 - 大規模データの処理には十分なディスク容量とメモリが必要です
+- 実際のDeSCデータは、セキュリティ上の理由からリポジトリには含まれていません。
+- データへのアクセスには適切な権限が必要です。
 
 ## 既存コードの修正方法
 
@@ -137,3 +236,11 @@ config = load_config()
 - 環境変数が読み込まれない場合は、`.env` ファイルの形式を確認してください
 - データディレクトリにアクセスできない場合は、パスが正しいか確認してください
 - 出力ディレクトリに書き込めない場合は、権限を確認してください
+
+## 開発者
+
+- Devin
+
+## ライセンス
+
+このプロジェクトは非公開です。無断での使用・配布は禁止されています。
