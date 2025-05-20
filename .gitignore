@@ -1,0 +1,61 @@
+# 環境変数設定
+.env
+
+# 処理済みデータ
+output/
+
+# Python関連
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ログファイル
+*.log
+
+# 一時ファイル
+.DS_Store
+Thumbs.db
+.Rproj.user
+
+# files by git_vaccinated etc.
+.httr-oauth
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.DS_Store
+*.Rproj
+# built files
+*.xlsx
+*.csv
+*.txt
+*.html
+*.pdf
+*.log
+# folders
+#**/input
+#**/output
+# junk files created by Latex
+ *.aux
+ *.out
+ *.bbl
+ *.ent
+# exceptions
+#!file_name.csv

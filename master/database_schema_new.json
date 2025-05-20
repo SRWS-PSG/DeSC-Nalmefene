@@ -1,0 +1,4220 @@
+{
+  "tables": {
+    "調査定義書(納品用)": {
+      "sheet_type": "survey_definition",
+      "metadata": {
+        "データ種別": null,
+        "納品保険者種別": [
+          "国民健康保険組合（以下、＜国保＞）",
+          "後期高齢者医療広域連合（以下、＜後期高齢＞）"
+        ],
+        "データ期間": null,
+        "納品対象ファイル": null,
+        "性別": null,
+        "年齢": [
+          "＜後期高齢＞65歳以上"
+        ],
+        "本人/扶養家族": null,
+        "在籍": null,
+        "匿名化マスク対象": null
+      },
+      "processed_at": "2025-03-02T08:35:35.128661"
+    },
+    "適用(被保険者台帳)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "適用(被保険者台帳)",
+      "physical_name": "tekiyo",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 2,
+          "項目名": "生年月",
+          "物理項目名": "birth_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM\n※月単位の値が不明な場合はnull\ntop_bottomコーディング対象の項目"
+        },
+        {
+          "#": 3,
+          "項目名": "性別コード",
+          "物理項目名": "sex_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1：男性 2：女性"
+        },
+        {
+          "#": 4,
+          "項目名": "本人家族コード",
+          "物理項目名": "honin_kazoku_code",
+          "type": "char",
+          "length": 1,
+          "備考": "0：本人 1：家族\n\n※保険者種別 = 健保の場合、\n本人=被保険者、家族=被扶養者 のことを指す\n※保険者種別 = 国保の場合、\n本人=世帯主、家族=世帯主以外 のことを指す"
+        },
+        {
+          "#": 5,
+          "項目名": "家族ID",
+          "物理項目名": "kazoku_id",
+          "type": "varchar",
+          "length": 255,
+          "備考": "同一保険者に家族がいる場合、家族全員に一意のIDを設定\n（保険者番号＋記号＋番号で一意のIDを付与）\n\n＊匿名加工時に上記の３項目は削除し、IDのみ残している\n＊保険者種別 = 後期高齢者の場合、全て空欄（すべてのデータが本人なので）"
+        },
+        {
+          "#": 6,
+          "項目名": "親子ID",
+          "物理項目名": "oyako_id",
+          "type": "varchar",
+          "length": 255,
+          "備考": "同一保険者に家族 かつ 親子がいる場合、親子全員に一意のIDを設定\n\n＊親子の判定は続柄(匿名加工により本人-それ以外に加工される前の情報)を使用\n＊親と子それぞれ1名以上いる場合のみ設定。親は現役世代（本人, 配偶者）に限定。子は一親等まで。\n＊ただし、祖父母世代に親子IDが設定される場合があることに注意（例：国保で死亡等で世帯主が移った場合など、世帯主がデータ上２名（祖父と父親 など）となる場合がある）\n＊保険者種別 = 後期高齢者の場合、全て空欄"
+        },
+        {
+          "#": 7,
+          "項目名": "続柄コード",
+          "物理項目名": "tsuzukigara_code",
+          "type": "varchar",
+          "length": 8,
+          "備考": "世帯主からみた一親等のみを表示、それ以外は「その他(99)」に丸める（匿名加工）\n\n01：世帯主\n02：夫\n03：妻\n33：子\n34：父\n35：母\n99：その他\n\n※保険者種別が国保 の一部の場合のみデータのみ値あり"
+        },
+        {
+          "#": 8,
+          "項目名": "観察可能期間開始年月",
+          "物理項目名": "observable_start_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "・個人ごとの観察可能期間（開始）：YYYY/MM\n"
+        },
+        {
+          "#": 9,
+          "項目名": "観察可能期間終了年月",
+          "物理項目名": "observable_end_ym",
+          "type": "varchar",
+          "length": 7,
+          "備考": "・個人ごとの観察可能期間（終了）：YYYY/MM\n"
+        },
+        {
+          "#": 10,
+          "項目名": "死亡フラグ",
+          "物理項目名": "shibou_flg",
+          "type": "char",
+          "length": 1,
+          "備考": "保険者種別 = 国保 または 後期高齢者 の場合に、\n1：死亡\n空欄：生存\n\n＊保険者種別 = 健保 の場合は死亡有無に関わらずすべて空欄となる"
+        },
+        {
+          "#": 11,
+          "項目名": "資格取得喪失変更事由コード",
+          "物理項目名": "shikaku_shutoku_soushitsu_henkou_jiyu_code",
+          "type": "varchar",
+          "length": 2,
+          "備考": "・保険者種別 = 国保 の場合\n1：転入 2：社保離脱 3：生保廃止 4：出生 5：世帯分離 6：世帯合併 7：転居 8：職権回復 9：その他１ 10：月報外 11：市町村合併 12：その他４： 13：後期高齢者医療制度離脱 14：月中社保離脱 15：月中国保組合離脱 16：世帯間移動 17：その他９ 18：その他10 19：その他11 20：その他12 21：退職該当(本人) 22：退職該当(家族) 23：老人保健該当(70歳到達) 24：老人保健該当(ねたきり) 25：資格証明該当 26：高額限度額区分該当 27：その他３ 28：その他４ 29：その他５ 30：その他６ 31：退職非該当(本人) 32：退職非該当(家族) 33：老人保健非該当(70歳到達) 34：老人保健非該当(ねたきり) 35：資格証明非該当 36：高額限度額区分非該当 37：その他３ 38：その他４ 39：その他５ 40：その他６ 41：転出 42：社保加入 43：生保開始 44：死亡 45：世帯分離 46：世帯合併 47：転居 48：職権抹消 49：その他１ 50：月報外 51：後期高齢者医療制度加入（年齢到達） 52：後期高齢者医療制度加入（障害認定） 53：月中国保加入 54：世帯間移動 55：その他７ 56：その他８ 57：その他９ 58：その他10 59：その他11 60：取得取消 61：氏名変更 62：住所変更 63：世帯主変更 64：被保険者証記号・番号変更（証番号世帯管理のみ） 65：学遠区分変更 66：国籍区分変更 67：証番号変更（証番号個人管理のみ） 68：世帯番号変更（証番号個人管理のみ） 69：世帯番号訂正（証番号個人管理のみ） 70：課税区分変更 71：証番号変更２ 72：宛名番号変更1 73：宛名番号変更2 74：世帯分離 75：世帯合併 76：世帯間移動 77：転居 98：訂正 99：抹消\n\n・保険者種別 = 健保 または 後期高齢者 の場合\n空欄"
+        },
+        {
+          "#": 12,
+          "項目名": "資格喪失事由コード",
+          "物理項目名": "shikaku_soushitsu_jiyu_code",
+          "type": "char",
+          "length": 3,
+          "備考": "・保険者種別 = 後期高齢者の場合\n　202：死亡 203：国籍喪失 204：失踪 205：職権削除 \n　209：転出 252：出国 253：その他喪失 254：適用除外\n　255：職権喪失 260：生活保護受給開始 261：障害認定撤回\n\n・保険者種別 = 国保 または 健保 の場合\n　空欄"
+        },
+        {
+          "#": 13,
+          "項目名": "kencom登録月",
+          "物理項目名": "kencom_touroku_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "kencom登録者：YYYY/MM\n未登録者：空欄"
+        },
+        {
+          "#": 14,
+          "項目名": "保険者種別",
+          "物理項目名": "insurer_shubetsu",
+          "type": "varchar",
+          "length": 255,
+          "備考": "・国保\n・後期高齢者\n・健保"
+        },
+        {
+          "#": 15,
+          "項目名": "死亡フラグ利用可",
+          "物理項目名": "shibou_flg_riyouka",
+          "type": "char",
+          "length": 1,
+          "備考": "当該個人が所属する保険者から二次利用許諾いただいたデータで、#9死亡フラグ の値が入っているか\n0：死亡フラグの値なし（全て空欄）\n1：死亡フラグの値あり（1または空欄）\n\n※死亡フラグを利用した分析をする場合、死亡フラグ利用可 = 1 に集団を絞り込む必要あり"
+        },
+        {
+          "#": 16,
+          "項目名": "家族ID利用可",
+          "物理項目名": "kazoku_id_riyouka",
+          "type": "char",
+          "length": 1,
+          "備考": "当該個人が所属する保険者から二次利用許諾いただいたデータで、#5家族ID の値が入っているか\n0：家族IDの値なし（全て空欄）\n1：家族IDの値あり（文字列または空欄）\n\n※家族IDを利用した分析をする場合、家族ID利用可 = 1 に集団を絞り込む必要あり"
+        },
+        {
+          "#": 17,
+          "項目名": "親子ID利用可",
+          "物理項目名": "oyako_id_riyouka",
+          "type": "char",
+          "length": 1,
+          "備考": "当該個人が所属する保険者から二次利用許諾いただいたデータで、#6親子ID の値が入っているか\n0：親子IDの値なし（全て空欄）\n1：親子IDの値あり（文字列または空欄）\n\n※親子IDを利用した分析をする場合、親子ID利用可 = 1 に集団を絞り込む必要あり"
+        },
+        {
+          "#": 18,
+          "項目名": "健診データ有",
+          "物理項目名": "kenshin_data_ari",
+          "type": "char",
+          "length": 1,
+          "備考": "当該個人が所属する保険者から二次利用許諾いただいたデータに、健診・問診 データが含まれているか\n0：健診データ無（実際には健診を受けていても「健診・問診」テーブルにレコードが存在しない）\n1：健診データ有（健診受診者のレコードが「健診・問診」テーブルに存在する）\n\n※健診受診率等の分析をする場合、健診データ有 = 1 に集団を絞り込む必要あり"
+        },
+        {
+          "#": 19,
+          "項目名": "歯科レセプト有",
+          "物理項目名": "shika_receipt_ari",
+          "type": "char",
+          "length": 1,
+          "備考": "当該個人が所属する保険者から二次利用許諾いただいたデータに、歯科レセプト データが含まれているか\n0：歯科レセプト無（歯科医等を受診していても歯科レセプトのレコードが発生しない）\n1：歯科レセプト有（歯科医等を受診した場合に歯科レセプトのレコードが発生する）"
+        },
+        {
+          "#": 20,
+          "項目名": "地域名コード",
+          "物理項目名": "chiiki_code",
+          "type": "char",
+          "length": 1,
+          "備考": "各個人の居住地を示すものではなく、保険者の所在地域が入る\n1：北海道・東北（北海道、青森、岩手、宮城、秋田、山形、福島）\n2：南関東（埼玉、千葉、東京、神奈川）\n3：北関東・甲信（茨城、栃木、群馬、山梨、長野）\n4：北陸（新潟、富山、石川、福井）\n5：東海（岐阜、静岡、愛知、三重）\n6：近畿（滋賀、京都、大阪、兵庫、奈良、和歌山）\n7：中国（鳥取、島根、岡山、広島、山口）\n8：四国（徳島、香川、愛媛、高知）\n9：九州（福岡、佐賀、長崎、熊本、大分、宮崎、鹿児島、沖縄）"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:36.169172"
+    },
+    "健診・問診(標準版)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "健診・問診(標準版)",
+      "physical_name": "exam_interview_processed",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 2,
+          "項目名": "健診実施年月日",
+          "物理項目名": "exam_ymd",
+          "type": "char",
+          "length": 10,
+          "PK": "○",
+          "備考": "YYYY/MM/DD"
+        },
+        {
+          "#": 3,
+          "項目名": "身長",
+          "物理項目名": "height",
+          "type": "numeric",
+          "length": "-",
+          "備考": "top_bottomコーディング対象の項目\n特定健診における必須項目*\n\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 4,
+          "項目名": "体重",
+          "物理項目名": "weight",
+          "type": "numeric",
+          "length": "-",
+          "備考": "top_bottomコーディング対象の項目\n特定健診における必須項目*\n\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 5,
+          "項目名": "内臓脂肪面積",
+          "物理項目名": "naizo_shibou_menseki",
+          "type": "numeric",
+          "length": "-",
+          "備考": "top_bottomコーディング対象の項目"
+        },
+        {
+          "#": 6,
+          "項目名": "BMI",
+          "物理項目名": "bmi",
+          "type": "numeric",
+          "length": "-",
+          "備考": "top_bottomコーディング対象の項目\n特定健診における必須項目*\n\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 7,
+          "項目名": "腹囲実測",
+          "物理項目名": "fukui",
+          "type": "numeric",
+          "length": "-",
+          "備考": "top_bottomコーディング対象の項目"
+        },
+        {
+          "#": 8,
+          "項目名": "収縮期血圧",
+          "物理項目名": "systolic_blood_pressure",
+          "type": "numeric",
+          "length": "-",
+          "備考": "top_bottomコーディング対象の項目\n特定健診における必須項目*\n\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 9,
+          "項目名": "収縮期血圧その他",
+          "物理項目名": "systolic_blood_pressure_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 10,
+          "項目名": "収縮期血圧２回目",
+          "物理項目名": "systolic_blood_pressure2",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 11,
+          "項目名": "収縮期血圧１回目",
+          "物理項目名": "systolic_blood_pressure1",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 12,
+          "項目名": "拡張期血圧",
+          "物理項目名": "diastolic_blood_pressure",
+          "type": "numeric",
+          "length": "-",
+          "備考": "top_bottomコーディング対象の項目\n特定健診における必須項目*\n\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 13,
+          "項目名": "拡張期血圧その他",
+          "物理項目名": "diastolic_blood_pressure_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 14,
+          "項目名": "拡張期血圧２回目",
+          "物理項目名": "diastolic_blood_pressure2",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 15,
+          "項目名": "拡張期血圧１回目",
+          "物理項目名": "diastolic_blood_pressure1",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 16,
+          "項目名": "採血時間食後コード",
+          "物理項目名": "saiketsu_jikan_syokugo_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:10 時間未満\n2:10 時間以上\n3:食後 3.5 時間以上 10 時間未満\n4:食後 3.5 時間未満"
+        },
+        {
+          "#": 17,
+          "項目名": "総コレステロール可視",
+          "物理項目名": "total_cholesterol_kashi",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 18,
+          "項目名": "総コレステロール紫外",
+          "物理項目名": "total_cholesterol_shigai",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 19,
+          "項目名": "総コレステロール他",
+          "物理項目名": "total_cholesterol_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 20,
+          "項目名": "中性脂肪",
+          "物理項目名": "chusei_shibou",
+          "type": "numeric",
+          "length": "-",
+          "備考": "top_bottomコーディング対象の項目\n特定健診における必須項目*\n\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 21,
+          "項目名": "中性脂肪可視",
+          "物理項目名": "chusei_shibou_kashi",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 22,
+          "項目名": "中性脂肪紫外",
+          "物理項目名": "chusei_shibou_shigai",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 23,
+          "項目名": "中性脂肪その他",
+          "物理項目名": "chusei_shibou_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 24,
+          "項目名": "HDL_C",
+          "物理項目名": "hdl",
+          "type": "numeric",
+          "length": "-",
+          "備考": "top_bottomコーディング対象の項目\n特定健診における必須項目*\n\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 25,
+          "項目名": "HDL_C可視",
+          "物理項目名": "hdl_kashi",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 26,
+          "項目名": "HDL_C紫外",
+          "物理項目名": "hdl_shigai",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 27,
+          "項目名": "HDL_C他",
+          "物理項目名": "hdl_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 28,
+          "項目名": "LDL_C",
+          "物理項目名": "ldl",
+          "type": "numeric",
+          "length": "-",
+          "備考": "top_bottomコーディング対象の項目"
+        },
+        {
+          "#": 29,
+          "項目名": "LDL_C可視",
+          "物理項目名": "ldl_kashi",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 30,
+          "項目名": "LDL_C紫外",
+          "物理項目名": "ldl_shigai",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 31,
+          "項目名": "LDL_Cその他",
+          "物理項目名": "ldl_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 32,
+          "項目名": "LDL_C計算法",
+          "物理項目名": "ldl_keisanhou",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 33,
+          "項目名": "non-HDLコレステロール",
+          "物理項目名": "non_hdl",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 34,
+          "項目名": "総ビリルビン可視",
+          "物理項目名": "total_bilirubin_kashi",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 35,
+          "項目名": "総ビリルビンその他",
+          "物理項目名": "total_bilirubin_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 36,
+          "項目名": "GOT",
+          "物理項目名": "got",
+          "type": "numeric",
+          "length": "-",
+          "備考": "top_bottomコーディング対象の項目\n特定健診における必須項目*\n\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 37,
+          "項目名": "GOT紫外",
+          "物理項目名": "got_shigai",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 38,
+          "項目名": "GOTその他",
+          "物理項目名": "got_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 39,
+          "項目名": "GPT",
+          "物理項目名": "gpt",
+          "type": "numeric",
+          "length": "-",
+          "備考": "top_bottomコーディング対象の項目\n特定健診における必須項目*\n\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 40,
+          "項目名": "GPT紫外",
+          "物理項目名": "gpt_shigai",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 41,
+          "項目名": "GPTその他",
+          "物理項目名": "gpt_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 42,
+          "項目名": "γGT",
+          "物理項目名": "gamma_gt",
+          "type": "numeric",
+          "length": "-",
+          "備考": "top_bottomコーディング対象の項目\n特定健診における必須項目*\n\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 43,
+          "項目名": "γGT可視",
+          "物理項目名": "gamma_gt_kashi",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 44,
+          "項目名": "γGTその他",
+          "物理項目名": "gamma_gt_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 45,
+          "項目名": "ALP可視",
+          "物理項目名": "alp_kashi",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 46,
+          "項目名": "ALPその他",
+          "物理項目名": "alp_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 47,
+          "項目名": "総蛋白可視",
+          "物理項目名": "total_protein_kashi",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 48,
+          "項目名": "総蛋白その他",
+          "物理項目名": "total_protein_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 49,
+          "項目名": "アルブミン可視",
+          "物理項目名": "albumin_kashi",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 50,
+          "項目名": "アルブミンその他",
+          "物理項目名": "albumin_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 51,
+          "項目名": "AdivG",
+          "物理項目名": "adivg",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 52,
+          "項目名": "血清フェリチンEIA",
+          "物理項目名": "serum_ferritin_eia",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 53,
+          "項目名": "血清フェリチンその他",
+          "物理項目名": "serum_ferritin_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 54,
+          "項目名": "空腹時血糖",
+          "物理項目名": "kuufukuji_ketto",
+          "type": "numeric",
+          "length": "-",
+          "備考": "top_bottomコーディング対象の項目\n特定健診における必須項目(空腹時血糖またはHbA1c)*\n\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 55,
+          "項目名": "空腹時血糖電位差法",
+          "物理項目名": "kuufukuji_ketto_denisahou",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 56,
+          "項目名": "空腹時血糖可視",
+          "物理項目名": "kuufukuji_ketto_kashi",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 57,
+          "項目名": "空腹時血糖紫外",
+          "物理項目名": "kuufukuji_ketto_shigai",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 58,
+          "項目名": "空腹時血糖その他",
+          "物理項目名": "kuufukuji_ketto_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 59,
+          "項目名": "随時血糖",
+          "物理項目名": "zuiji_ketto",
+          "type": "numeric",
+          "length": "-",
+          "備考": "top_bottomコーディング対象の項目"
+        },
+        {
+          "#": 60,
+          "項目名": "随時血糖電位差法",
+          "物理項目名": "zuiji_ketto_denisahou",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 61,
+          "項目名": "随時血糖可視",
+          "物理項目名": "zuiji_ketto_kashi",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 62,
+          "項目名": "随時血糖紫外",
+          "物理項目名": "zuiji_ketto_shigai",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 63,
+          "項目名": "随時血糖その他",
+          "物理項目名": "zuiji_ketto_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 64,
+          "項目名": "HbA1c",
+          "物理項目名": "hba1c",
+          "type": "numeric",
+          "length": "-",
+          "備考": "NGSP系（JDS→NGSPの変換は NGSP値（%）＝1.02×JDS値（%）＋0.25%）\n\ntop_bottomコーディング対象の項目\n特定健診における必須項目(空腹時血糖またはHbA1c)*\n\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 65,
+          "項目名": "HbA1c_NGSP免疫",
+          "物理項目名": "hba1c_ngsp_meneki",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 66,
+          "項目名": "HbA1c_NGSPHPLC",
+          "物理項目名": "hba1c_ngsp_hplc",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 67,
+          "項目名": "HbA1c_NGSP酵素法",
+          "物理項目名": "hba1c_ngsp_kousohou",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 68,
+          "項目名": "HbA1c_NGSPその他",
+          "物理項目名": "hba1c_ngsp_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 69,
+          "項目名": "HbA1c_JDS免疫",
+          "物理項目名": "hba1c_jdsh_meneki",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 70,
+          "項目名": "HbA1c_JDSHPLC",
+          "物理項目名": "hba1c_jdsh_hplc",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 71,
+          "項目名": "HbA1c_JDS酵素法",
+          "物理項目名": "hba1c_jdsh_kousohou",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 72,
+          "項目名": "HbA1c_JDSその他",
+          "物理項目名": "hba1c_jdsh_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 73,
+          "項目名": "尿糖コード",
+          "物理項目名": "nyoutou_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1（-）、2（±）、3（+）、4（++）、5（+++）\n-------------------\n特定健診における必須項目*\n\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 74,
+          "項目名": "尿糖機械読み取りコード",
+          "物理項目名": "nyoutou_kikai_yomitori_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1（-）、2（±）、3（+）、4（++）、5（+++）\n-------------------\n特定健診における必須項目*\n\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 75,
+          "項目名": "尿糖目視法コード",
+          "物理項目名": "nyoutou_mokushihou_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1（-）、2（±）、3（+）、4（++）、5（+++）\n-------------------\n特定健診における必須項目*\n\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 76,
+          "項目名": "尿蛋白コード",
+          "物理項目名": "nyoutanpaku_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1（-）、2（±）、3（+）、4（++）、5（+++）\n-------------------\n特定健診における必須項目*\n\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 77,
+          "項目名": "尿蛋白機械読み取りコード",
+          "物理項目名": "nyoutanpaku_kikai_yomitori_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1（-）、2（±）、3（+）、4（++）、5（+++）\n-------------------\n特定健診における必須項目*\n\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 78,
+          "項目名": "尿蛋白目視法コード",
+          "物理項目名": "nyoutanpaku_mokushihou_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1（-）、2（±）、3（+）、4（++）、5（+++）\n-------------------\n特定健診における必須項目*\n\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 79,
+          "項目名": "尿潜血コード",
+          "物理項目名": "nyousenketsu_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1（-）、2（±）、3（+）、4（++）、5（+++）"
+        },
+        {
+          "#": 80,
+          "項目名": "尿潜血機械読み取りコード",
+          "物理項目名": "nyousenketsu_kikai_yomitori_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1（-）、2（±）、3（+）、4（++）、5（+++）"
+        },
+        {
+          "#": 81,
+          "項目名": "尿潜血目視法コード",
+          "物理項目名": "nyousenketsu_mokushihou_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1（-）、2（±）、3（+）、4（++）、5（+++）"
+        },
+        {
+          "#": 82,
+          "項目名": "尿沈渣所見の有無コード",
+          "物理項目名": "nyouchinsa_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:異常所見あり\n2:異常所見なし\n3:要再検査\n4:検査不適"
+        },
+        {
+          "#": 83,
+          "項目名": "ヘマトクリット値",
+          "物理項目名": "hematocrit_value",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 84,
+          "項目名": "血色素量Hb",
+          "物理項目名": "kesshikisoryou_hb",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 85,
+          "項目名": "赤血球数",
+          "物理項目名": "sekkekyuusuu",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 86,
+          "項目名": "MCV",
+          "物理項目名": "mcv",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 87,
+          "項目名": "MCH",
+          "物理項目名": "mch",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 88,
+          "項目名": "MCHC",
+          "物理項目名": "mchc",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 89,
+          "項目名": "白血球数",
+          "物理項目名": "hakkekkyuusuu",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 90,
+          "項目名": "血小板数",
+          "物理項目名": "kesshoubansuu",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 91,
+          "項目名": "血清Cr",
+          "物理項目名": "kessei_cr",
+          "type": "numeric",
+          "length": "-",
+          "備考": "top_bottomコーディング対象の項目"
+        },
+        {
+          "#": 92,
+          "項目名": "血清Cr対象者コード",
+          "物理項目名": "kessei_cr_target_code",
+          "type": "char",
+          "length": 1,
+          "備考": "0:詳細健診以外で実施 \n1:検査結果による血清クレアチニン検査対象者"
+        },
+        {
+          "#": 93,
+          "項目名": "血清Cr可視",
+          "物理項目名": "kessei_cr_kashi",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 94,
+          "項目名": "血清Crその他",
+          "物理項目名": "kessei_cr_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 95,
+          "項目名": "血清尿酸",
+          "物理項目名": "kessei_nyousan",
+          "type": "numeric",
+          "length": "-",
+          "備考": "top_bottomコーディング対象の項目"
+        },
+        {
+          "#": 96,
+          "項目名": "血清尿酸可視",
+          "物理項目名": "kessei_nyousan_kashi",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 97,
+          "項目名": "血清尿酸その他",
+          "物理項目名": "kessei_nyousan_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 98,
+          "項目名": "eGFR",
+          "物理項目名": "e_gfr",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 99,
+          "項目名": "CRP_LCM",
+          "物理項目名": "crp_lcm",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 100,
+          "項目名": "CRP免役比濁法",
+          "物理項目名": "crp_hidaku",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 101,
+          "項目名": "CRPその他",
+          "物理項目名": "crp_other",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 102,
+          "項目名": "血液型ABO試験管法コード",
+          "物理項目名": "blood_type_abo_shikenkan_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:A \n2:B\n3:AB\n4:O"
+        },
+        {
+          "#": 103,
+          "項目名": "血液型ABOその他コード",
+          "物理項目名": "blood_type_abo_other_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:A \n2:B\n3:AB\n4:O"
+        },
+        {
+          "#": 104,
+          "項目名": "血液型Rh試験管法コード",
+          "物理項目名": "blood_type_rh_shikenkan_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:+\n2:-"
+        },
+        {
+          "#": 105,
+          "項目名": "血液型Rhその他コード",
+          "物理項目名": "blood_type_rh_other_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:+\n2:-"
+        },
+        {
+          "#": 106,
+          "項目名": "梅毒反応コード",
+          "物理項目名": "syphilis_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:陽性\n2:陰性"
+        },
+        {
+          "#": 107,
+          "項目名": "HBs抗原コード",
+          "物理項目名": "hbs_antigen_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:陽性\n2:陰性"
+        },
+        {
+          "#": 108,
+          "項目名": "HCV抗体コード",
+          "物理項目名": "hcv_antibody_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:陽性\n2:陰性"
+        },
+        {
+          "#": 109,
+          "項目名": "HCV抗体力価コード",
+          "物理項目名": "hcv_antibody_titer_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:陰性\n2:低力価\n3:中力価\n4:高力価"
+        },
+        {
+          "#": 110,
+          "項目名": "HCV抗原検査コード",
+          "物理項目名": "hcv_antigen_test_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:陽性\n2:陰性"
+        },
+        {
+          "#": 111,
+          "項目名": "HCV核酸増幅検査コード",
+          "物理項目名": "hcv_nat_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:陽性\n2:陰性"
+        },
+        {
+          "#": 112,
+          "項目名": "HCV検診の判定コード",
+          "物理項目名": "hcv_screening_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:現在、Ｃ型肝炎ウイルスに感染していない可能性が極めて高 い\n2:現在、Ｃ型肝炎ウイルスに感染している可能性が極めて高い"
+        },
+        {
+          "#": 113,
+          "項目名": "心電図対象者コード",
+          "物理項目名": "shindenzu_target_code",
+          "type": "char",
+          "length": 1,
+          "備考": "0:詳細健診以外で実施 \n1:検査結果による心電図検査対象者 \n2:不整脈による心電図検査対象者"
+        },
+        {
+          "#": 114,
+          "項目名": "心電図所見の有無コード",
+          "物理項目名": "shindenzu_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:所見あり\n2:所見なし"
+        },
+        {
+          "#": 115,
+          "項目名": "CXRがん直接撮影コード",
+          "物理項目名": "cxr_cancer_direct_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:A\n2:B\n3:C\n4:D\n5:E"
+        },
+        {
+          "#": 116,
+          "項目名": "CXR一般直接所見有無コード",
+          "物理項目名": "cxr_general_direct_findings_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:異常所見あり\n2:異常所見なし\n3:要再検査\n4:検査不適"
+        },
+        {
+          "#": 117,
+          "項目名": "CXRがん間接撮影コード",
+          "物理項目名": "cxr_cancer_indirect_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:A\n2:B\n3:C\n4:D\n5:E"
+        },
+        {
+          "#": 118,
+          "項目名": "CXR一般間接所見有無コード",
+          "物理項目名": "cxr_general_indirect_findings_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:異常所見あり\n2:異常所見なし\n3:要再検査\n4:検査不適"
+        },
+        {
+          "#": 119,
+          "項目名": "EGD所見の有無コード",
+          "物理項目名": "egd_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:異常所見あり\n2:異常所見なし\n3:要再検査\n4:検査不適"
+        },
+        {
+          "#": 120,
+          "項目名": "ペプシノゲンコード",
+          "物理項目名": "pepsinogen_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:陽性\n2:陰性"
+        },
+        {
+          "#": 121,
+          "項目名": "腹部超音波所見の有無コード",
+          "物理項目名": "abdominal_ultrasound_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:異常所見あり\n2:異常所見なし\n3:要再検査\n4:検査不適"
+        },
+        {
+          "#": 122,
+          "項目名": "婦人科診察所見の有無コード",
+          "物理項目名": "gynecological_examination_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:異常所見あり\n2:異常所見なし\n3:要再検査\n4:検査不適"
+        },
+        {
+          "#": 123,
+          "項目名": "乳房画像診断所見有無コード",
+          "物理項目名": "breast_imaging_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:異常所見あり\n2:異常所見なし\n3:要再検査\n4:検査不適"
+        },
+        {
+          "#": 124,
+          "項目名": "子宮視診所見有無コード",
+          "物理項目名": "uterus_visual_examination_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:異常所見あり\n2:異常所見なし\n3:要再検査\n4:検査不適"
+        },
+        {
+          "#": 125,
+          "項目名": "子宮内診所見の有無コード",
+          "物理項目名": "endometrial_examination_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:異常所見あり\n2:異常所見なし\n3:要再検査\n4:検査不適"
+        },
+        {
+          "#": 126,
+          "項目名": "便潜血コード",
+          "物理項目名": "fecal_occult_blood_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:陽性\n2:陰性"
+        },
+        {
+          "#": 127,
+          "項目名": "肺機能検査努力肺活量",
+          "物理項目名": "pulmonary_function_test_lung_capacity",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 128,
+          "項目名": "肺機能検査１秒量",
+          "物理項目名": "pulmonary_function_test_1second_amount",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 129,
+          "項目名": "肺機能検査１秒率",
+          "物理項目名": "pulmonary_function_test_1second_rate",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 130,
+          "項目名": "肺機能検査VC",
+          "物理項目名": "pulmonary_function_test_vc",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 131,
+          "項目名": "視力右",
+          "物理項目名": "visual_acuity_r",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 132,
+          "項目名": "視力右矯正",
+          "物理項目名": "visual_acuity_r_corrected",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 133,
+          "項目名": "視力左",
+          "物理項目名": "visual_acuity_l",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 134,
+          "項目名": "視力左矯正",
+          "物理項目名": "visual_acuity_l_corrected",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 135,
+          "項目名": "聴力右１０００Hzコード",
+          "物理項目名": "hearing_r_1000hz_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:異常所見あり\n2:異常所見なし\n3:要再検査\n4:検査不適"
+        },
+        {
+          "#": 136,
+          "項目名": "聴力右４０００Hzコード",
+          "物理項目名": "hearing_r_4000hz_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:異常所見あり\n2:異常所見なし\n3:要再検査\n4:検査不適"
+        },
+        {
+          "#": 137,
+          "項目名": "聴力左１０００Hzコード",
+          "物理項目名": "hearing_l_1000hz_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:異常所見あり\n2:異常所見なし\n3:要再検査\n4:検査不適"
+        },
+        {
+          "#": 138,
+          "項目名": "聴力左４０００Hzコード",
+          "物理項目名": "hearing_l_4000hz_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:異常所見あり\n2:異常所見なし\n3:要再検査\n4:検査不適"
+        },
+        {
+          "#": 139,
+          "項目名": "聴力検査方法コード",
+          "物理項目名": "hearing_test_method_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:オージオメトリー\n2:その他"
+        },
+        {
+          "#": 140,
+          "項目名": "眼底検査対象者コード",
+          "物理項目名": "gantei_kensa_target_code",
+          "type": "char",
+          "length": 1,
+          "備考": "0:詳細健診以外で実施 \n1:検査結果による眼底検査対象者"
+        },
+        {
+          "#": 141,
+          "項目名": "眼底検査W-M分類コード",
+          "物理項目名": "gantei_kensa_wm_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1: 所見なし\n2: 軽度\n3: 中等度\n4: 重度"
+        },
+        {
+          "#": 142,
+          "項目名": "眼底検査改変Davis分類コード",
+          "物理項目名": "gantei_kensa_kaihen_davis_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1: 網膜症なし\n2: 単純網膜症\n3: 増殖前網膜症\n4: 増殖網膜症"
+        },
+        {
+          "#": 143,
+          "項目名": "眼底検査KW分類コード",
+          "物理項目名": "gantei_kensa_kw_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:0\n2:Ⅰ\n3:Ⅱa\n4:Ⅱb\n5:Ⅲ\n6:Ⅳ"
+        },
+        {
+          "#": 144,
+          "項目名": "眼底検査シェイエHコード",
+          "物理項目名": "gantei_kensa_scheie_h_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:0\n2:１\n3:２\n4:３\n5:４"
+        },
+        {
+          "#": 145,
+          "項目名": "眼底検査シェイエSコード",
+          "物理項目名": "gantei_kensa_scheie_s_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:0\n2:１\n3:２\n4:３\n5:４"
+        },
+        {
+          "#": 146,
+          "項目名": "眼底検査SCOTTコード",
+          "物理項目名": "gantei_kensa_scott_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:Ⅰ(a)\n2:Ⅰ(b)\n3:Ⅱ\n4:Ⅲ(a)\n5 :(b)\n6:Ⅳ\n7:Ⅴ (a)\n8:Ⅴ(b)\n9:Ⅵ"
+        },
+        {
+          "#": 147,
+          "項目名": "眼圧検査右",
+          "物理項目名": "ganatsu_kensa_r",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 148,
+          "項目名": "眼圧検査左",
+          "物理項目名": "ganatsu_kensa_l",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 149,
+          "項目名": "保健指導レベルコード",
+          "物理項目名": "hoken_shidou_level_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1：積極的支援、2：動機づけ支援、3：情報提供レベル、4：判定不能"
+        },
+        {
+          "#": 150,
+          "項目名": "既往歴コード",
+          "物理項目名": "past_medical_history_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:特記事項あり\n2:特記事項なし"
+        },
+        {
+          "#": 151,
+          "項目名": "自覚症状コード",
+          "物理項目名": "subjective_symptoms_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:特記事項あり\n2:特記事項なし"
+        },
+        {
+          "#": 152,
+          "項目名": "他覚症状コード",
+          "物理項目名": "objective_symptoms_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:特記事項あり\n2:特記事項なし"
+        },
+        {
+          "#": 153,
+          "項目名": "服薬１血圧コード",
+          "物理項目名": "fukuyaku1_ketsuatsu_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「現在、血圧を下げる薬を使用している」\n回答：\n　1:はい\n　2:いいえ\n\n特定健診における必須項目*\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 154,
+          "項目名": "服薬２血糖コード",
+          "物理項目名": "fukuyaku2_kettou_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「現在、インスリン注射又は血糖を下げる薬を使用している」\n回答：\n　1:はい\n　2:いいえ\n\n特定健診における必須項目*\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 155,
+          "項目名": "服薬３脂質コード",
+          "物理項目名": "fukuyaku3_shishitsu_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「現在、コレステロールを下げる薬を使用している」\n回答：\n　1:はい\n　2:いいえ\n\n特定健診における必須項目*\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 156,
+          "項目名": "既往歴１脳血管コード",
+          "物理項目名": "kioureki1_noukekkan_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「医師から、脳卒中(脳出血、脳梗塞等)にかかっているといわれたり、治療を受けたことがありますか」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 157,
+          "項目名": "既往歴２心血管コード",
+          "物理項目名": "kioureki2_shinkekkan_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「医師から、心臓病(狭心症、心筋梗塞等)にかかっているといわれたり、治療を受けたことがありますか」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 158,
+          "項目名": "既往歴３腎不全HDコード",
+          "物理項目名": "kioureki3_zinfuzen_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「医師から、慢性の腎不全にかかっているといわれたり、治療(人工透析)を受けたことがありますか」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 159,
+          "項目名": "貧血コード",
+          "物理項目名": "hinketsu_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「医師から、貧血といわれたことがある」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 160,
+          "項目名": "喫煙コード",
+          "物理項目名": "kitsuen_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「現在、たばこを習慣的に吸っている。（※「現在、習慣的に喫煙している者」とは、「合計 100 本以上、又は６ヶ月以上吸っている者」であり、最近 1 ヶ月間も吸っている者）」\n回答：\n　1:はい\n　2:いいえ\n\n特定健診における必須項目*\n*https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000172888.html\n手引き内「図表１：基本的な健診の項目」より"
+        },
+        {
+          "#": 161,
+          "項目名": "体重変化２０歳からコード",
+          "物理項目名": "taijuu_henka_20sai_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「20 歳の時の体重から 10kg 以上増加している」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 162,
+          "項目名": "運動習慣３０分以上コード",
+          "物理項目名": "undou_shuukan_30pun_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「1 回 30 分以上の軽く汗をかく運動を週 2 日以上、1 年以上実施」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 163,
+          "項目名": "歩行又は身体活動コード",
+          "物理項目名": "hokou_or_shintai_katsudou_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「日常生活において歩行又は同等の身体活動を 1 日 1 時間以上実施」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 164,
+          "項目名": "歩行速度コード",
+          "物理項目名": "hokou_sokudo_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「ほぼ同じ年齢の同性と比較して歩く速度が速い」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 165,
+          "項目名": "体重変化１年間コード",
+          "物理項目名": "taijuu_henka_last_year_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「この 1 年間で体重の増減が±3 ㎏以上あった」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 166,
+          "項目名": "食べ方１早食い等コード",
+          "物理項目名": "tabekata1_hayagui_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「人と比較して食べる速度が速い」\n回答：\n　1:速い\n　2:ふつう\n　3:遅い"
+        },
+        {
+          "#": 167,
+          "項目名": "食べ方２就寝前コード",
+          "物理項目名": "tabekata2_shuushinmae_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「就寝前の 2 時間以内に夕食をとることが週に 3 回以上ある」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 168,
+          "項目名": "食べ方３夜食間食コード",
+          "物理項目名": "tabekata3_yashoku_kanshoku_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「夕食後に間食（3 食以外の夜食）をとることが週に 3 回以上ある」\n回答：\n　1:はい\n　2:いいえ\n（旧検査項目）"
+        },
+        {
+          "#": 169,
+          "項目名": "食べ方３間食コード",
+          "物理項目名": "tabekata3_kanshoku_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「朝昼夕の 3 食以外に間食や甘い飲み物を摂取していますか。」\n回答：\n　1:毎日\n　2:時々\n　3:ほとんど摂取しない"
+        },
+        {
+          "#": 170,
+          "項目名": "咀嚼コード",
+          "物理項目名": "sosyaku_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「歯や歯ぐき、かみあわせなど気になる部分があり、かみにくいことがある」\n回答：\n　1:何でも\n　2:かみにくい\n　3:ほとんどかめない"
+        },
+        {
+          "#": 171,
+          "項目名": "食習慣コード",
+          "物理項目名": "shokushuukan_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「朝食を抜くことが週に 3 回以上ある」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 172,
+          "項目名": "飲酒コード",
+          "物理項目名": "inshu_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「お酒（清酒、焼酎、ビール、洋酒など）を飲む頻度」\n回答：\n　1:毎日\n　2:時々\n　3:ほとんど飲まない"
+        },
+        {
+          "#": 173,
+          "項目名": "飲酒量コード",
+          "物理項目名": "inshuryou_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「飲酒日の１日当たりの飲酒量清酒１合（１８０ｍｌ）の目安：ビール中瓶１本（約５００ｍｌ）、焼酎３５度（８０ｍｌ）、ウイスキーダブル一杯（６０ｍｌ）、ワイン２杯（２４０ｍｌ）」\n回答：\n　1:１合未満\n　2:１～２合未満\n　3:２～３合未満\n　4:３合以上"
+        },
+        {
+          "#": 174,
+          "項目名": "睡眠コード",
+          "物理項目名": "suimin_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「睡眠で休養が十分とれている」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 175,
+          "項目名": "生活習慣の改善コード",
+          "物理項目名": "seikatsu_shuukan_kaizen_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「運動や食生活等の生活習慣を改善してみようと思いますか」\n回答：\n　1:改善するつもりはない\n　2:改善するつもりである(概ね６ヶ月以内)\n　3:近いうちに(概ね１ヶ月以内)改善するつもりであり、少しずつ始めている\n　4:既に改善に取り組んでいる(６ヶ月未満)\n　5:既に改善に取り組んでいる(６ヶ月以上) "
+        },
+        {
+          "#": 176,
+          "項目名": "保健指導の希望コード",
+          "物理項目名": "hoken_shidou_kibou_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「生活習慣の改善について保健指導を受ける機会があれば、利用しますか」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 177,
+          "項目名": "情報提供の方法コード",
+          "物理項目名": "jouhou_teikyou_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:付加価値の高い情報提供\n2:専門職による対面説明\n3:1と2両方実施"
+        },
+        {
+          "#": 178,
+          "項目名": "後期質問１コード",
+          "物理項目名": "kouki_shitsumon1_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「あなたの現在の健康状態はいかがですか」\n回答：\n　1:よい\n　2:まあよい\n　3:ふつう\n　4:あまりよくない\n　5:よくない"
+        },
+        {
+          "#": 179,
+          "項目名": "後期質問２コード",
+          "物理項目名": "kouki_shitsumon2_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「毎日の生活に満足していますか」\n回答：\n　1:満足\n　2:やや満足\n　3:やや不満\n　4:不満"
+        },
+        {
+          "#": 180,
+          "項目名": "後期質問３コード",
+          "物理項目名": "kouki_shitsumon3_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「１日３食きちんと食べていますか」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 181,
+          "項目名": "後期質問４コード",
+          "物理項目名": "kouki_shitsumon4_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「半年前に比べて固いものが食べにくくなりましたか」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 182,
+          "項目名": "後期質問５コード",
+          "物理項目名": "kouki_shitsumon5_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「お茶や汁物等でむせることがありますか」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 183,
+          "項目名": "後期質問６コード",
+          "物理項目名": "kouki_shitsumon6_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「６カ月間で２～３kg以上の体重減少がありましたか」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 184,
+          "項目名": "後期質問７コード",
+          "物理項目名": "kouki_shitsumon7_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「以前に比べて歩く速度が遅くなってきたと思いますか」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 185,
+          "項目名": "後期質問８コード",
+          "物理項目名": "kouki_shitsumon8_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「この1年間に転んだことがありますか」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 186,
+          "項目名": "後期質問９コード",
+          "物理項目名": "kouki_shitsumon9_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「ウォーキング等の運動を週に1回以上していますか」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 187,
+          "項目名": "後期質問１０コード",
+          "物理項目名": "kouki_shitsumon10_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「周りの人から「いつも同じことを聞く」などの物忘れがあると言われていますか」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 188,
+          "項目名": "後期質問１１コード",
+          "物理項目名": "kouki_shitsumon11_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「今日が何月何日かわからない時がありますか」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 189,
+          "項目名": "後期質問１２コード",
+          "物理項目名": "kouki_shitsumon12_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「あなたはたばこを吸いますか」\n回答：\n　1:吸っている\n　2:吸っていない\n　3:やめた"
+        },
+        {
+          "#": 190,
+          "項目名": "後期質問１３コード",
+          "物理項目名": "kouki_shitsumon13_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「週に1回以上は外出していますか」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 191,
+          "項目名": "後期質問１４コード",
+          "物理項目名": "kouki_shitsumon14_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「ふだんから家族や友人と付き合いがありますか」\n回答：\n　1:はい\n　2:いいえ"
+        },
+        {
+          "#": 192,
+          "項目名": "後期質問１５コード",
+          "物理項目名": "kouki_shitsumon15_code",
+          "type": "char",
+          "length": 1,
+          "備考": "問診の質問「体調が悪いときに、身近に相談できる人がいますか」\n回答：\n　1:はい\n　2:いいえ"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:36.480689"
+    },
+    "kencom活用状況(機能別)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "kencom活用状況(機能別)",
+      "physical_name": "kencom_usage_by_function",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 2,
+          "項目名": "年月",
+          "物理項目名": "ym",
+          "type": "char",
+          "length": 7,
+          "PK": "○",
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 3,
+          "項目名": "計測対象種別コード",
+          "物理項目名": "keisoku_taishou_shubetsu_code",
+          "type": "varchar",
+          "length": 2,
+          "PK": "○",
+          "備考": "1:アクセス日数全体\n2:スマートフォンWEBアクセス日数\n3:スマートフォンAPPアクセス日数\n4:PCアクセス日数\n5:さんぽジスタ利用日数\n6:特定健診結果閲覧日数\n7:医療費のお知らせ閲覧日数\n8:おくすり履歴・GE差額閲覧日数\n9:お知らせ閲覧日数\n10:運動・スポーツ記事_閲覧記事数\n11:食事記事_閲覧記事数\n12:生活習慣記事_閲覧記事数\n13:ダイエット記事_閲覧記事数\n14:病気記事_閲覧記事数\n15:こころ記事_閲覧記事数\n16:仕事記事_閲覧記事数\n17:お金記事_閲覧記事数\n18:美容記事_閲覧記事数\n19:子育て記事_閲覧記事数\n20:トリビア記事_閲覧記事数\n21:kencomポイント獲得数\n22:kencomポイント消費数\n23:独自ポイント獲得数\n24:独自ポイント消費数\n25:被招待者数\n30:カラダタブ閲覧日数"
+        },
+        {
+          "#": 4,
+          "項目名": "計測値",
+          "物理項目名": "value",
+          "type": "integer",
+          "length": "-",
+          "備考": "1以上の値\n※値がゼロの場合はレコードが生成されない"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:36.609022"
+    },
+    "kencom利用状況(歩活参加者)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "kencom利用状況(歩活参加者)",
+      "physical_name": "kencom_usage_arukatsu",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 2,
+          "項目名": "キャンペーンID",
+          "物理項目名": "campaign_id",
+          "type": "char",
+          "length": 10,
+          "PK": "○",
+          "備考": "歩活開催を識別するID"
+        },
+        {
+          "#": 3,
+          "項目名": "キャンペーン開始年月日",
+          "物理項目名": "campaign_start_ymd",
+          "type": "char",
+          "length": 10,
+          "備考": "YYYY/MM/DD"
+        },
+        {
+          "#": 4,
+          "項目名": "キャンペーン終了年月日",
+          "物理項目名": "campaign_end_ymd",
+          "type": "char",
+          "length": 10,
+          "備考": "YYYY/MM/DD"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:36.742887"
+    },
+    "ライフログ(歩数)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "ライフログ(歩数)",
+      "physical_name": "life_log_step_count",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 2,
+          "項目名": "年月日",
+          "物理項目名": "ymd",
+          "type": "char",
+          "length": 10,
+          "PK": "○",
+          "備考": "YYYY/MM/DD"
+        },
+        {
+          "#": 3,
+          "項目名": "歩数",
+          "物理項目名": "step_count",
+          "type": "integer",
+          "length": "-",
+          "備考": "top_bottomコーディング対象項目"
+        },
+        {
+          "#": 4,
+          "項目名": "歩数データソースコード",
+          "物理項目名": "step_datasource_code",
+          "type": "char",
+          "length": 1,
+          "PK": "○",
+          "備考": "1：手動入力\n2：スマートフォン自動連携\n3：welby連携ウェアラブルデバイス\n4：fitbit\n5：Google Fit\n6：soccer（さんぽジスタ）"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:36.927858"
+    },
+    "アンケート質問": {
+      "sheet_type": "survey_definition",
+      "metadata": {},
+      "processed_at": "2025-03-02T08:35:37.062362"
+    },
+    "アンケート選択肢": {
+      "sheet_type": "survey_definition",
+      "metadata": {},
+      "processed_at": "2025-03-02T08:35:37.188633"
+    },
+    "アンケート回答": {
+      "sheet_type": "survey_definition",
+      "metadata": {},
+      "processed_at": "2025-03-02T08:35:37.294469"
+    },
+    "医療機関マスター": {
+      "sheet_type": "insured_ledger",
+      "table_name": "医療機関マスター",
+      "physical_name": "m_hco_med",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "仮医療機関番号",
+          "物理項目名": "iryokikan_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 2,
+          "項目名": "施設区分コード",
+          "物理項目名": "shisetsu_kbn_code",
+          "type": "varchar",
+          "length": 2,
+          "備考": "11.病院\n12.診療所\n31.歯科病院\n32.歯科診療所\n81.大学関連施設\n99.その他(上記区分から上記にない区分、例えば介護医療院などに変更となった場合）"
+        },
+        {
+          "#": 3,
+          "項目名": "大学病院フラグ",
+          "物理項目名": "univ_hosp_flag",
+          "type": "char",
+          "length": 1,
+          "備考": "1:医科大学"
+        },
+        {
+          "#": 4,
+          "項目名": "がん診療連携拠点病院コード",
+          "物理項目名": "cancer_base_hosp_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1：国立がん研究センター\n2：都道府県がん診療連携拠点病院\n3：地域がん診療連携拠点病院\n4：特定領域がん診療連携拠点病院\n5：地域がん診療病院\n6：地域がん診療連携拠点病院（高度型）\n7：地域がん診療連携拠点病院（特例型）\n8：地域がん診療病院（特例型）\n9：都道府県がん診療連携拠点病院（特例型）\n0：該当なし"
+        },
+        {
+          "#": 5,
+          "項目名": "がん診療連携拠点病院フラグ",
+          "物理項目名": "cancer_base_hosp_flg",
+          "type": "char",
+          "length": 1,
+          "備考": "1：がん診療連携拠点病院\n0：該当なし"
+        },
+        {
+          "#": 6,
+          "項目名": "救命救急センターコード",
+          "物理項目名": "critical_care_center_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1：高度救命救急センター（ドクターヘリ導入病院）\n2：高度救命救急センター\n3：地域救命救急センター（ドクターヘリ導入病院）\n4：地域救命救急センター\n5：上記以外（ドクターヘリ導入病院）\n6：上記以外\n0：該当なし"
+        },
+        {
+          "#": 7,
+          "項目名": "救命救急センターフラグ",
+          "物理項目名": "critical_care_center_flg",
+          "type": "char",
+          "length": 1,
+          "備考": "1：救命救急センター\n0：該当なし"
+        },
+        {
+          "#": 8,
+          "項目名": "DPC対象病院コード",
+          "物理項目名": "dpc_hosp_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1：大学病院本院群　\n2：DPC特定病院群　\n3：DPC標準病院群\n0：該当なし\n基本的に現時点の情報のみ（今後蓄積可能）"
+        },
+        {
+          "#": 9,
+          "項目名": "地域名コード",
+          "物理項目名": "chiiki_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1：北海道・東北（北海道、青森、岩手、宮城、秋田、山形、福島）\n2：南関東（埼玉、千葉、東京、神奈川）\n3：北関東・甲信（茨城、栃木、群馬、山梨、長野）\n4：北陸（新潟、富山、石川、福井）\n5：東海（岐阜、静岡、愛知、三重）\n6：近畿（滋賀、京都、大阪、兵庫、奈良、和歌山）\n7：中国（鳥取、島根、岡山、広島、山口）\n8：四国（徳島、香川、愛媛、高知）\n9：九州（福岡、佐賀、長崎、熊本、大分、宮崎、鹿児島、沖縄）"
+        },
+        {
+          "#": 10,
+          "項目名": "総病床数コード",
+          "物理項目名": "total_byoshousuu_code",
+          "type": "varchar",
+          "length": 2,
+          "備考": "0:不明\n1:20床未満\n2:20~49床\n3:50~99床\n4:100~149床\n5:150~199床\n6:200~299床\n7:300~399床\n8:400~499床\n9:500~599床\n10:600~699床\n11:700~799床\n12:800~899床\n13:900床以上"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:37.405774"
+    },
+    "医療機関標榜科マスター": {
+      "sheet_type": "insured_ledger",
+      "table_name": "医療機関標榜科マスター",
+      "physical_name": "m_hco_xref_specialty",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "仮医療機関番号",
+          "物理項目名": "iryokikan_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 2,
+          "項目名": "標榜診療科記載順",
+          "物理項目名": "specialty_seq",
+          "type": "integer",
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "標榜診療科名",
+          "物理項目名": "specialty_name",
+          "type": "varchar",
+          "length": 100
+        },
+        {
+          "#": 4,
+          "項目名": "標準化診療科名",
+          "物理項目名": "std_specialty_name",
+          "type": "varchar",
+          "length": 100
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:37.624809"
+    },
+    "傷病マスター": {
+      "sheet_type": "insured_ledger",
+      "table_name": "傷病マスター",
+      "physical_name": "m_disease",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト電算処理システム傷病コード",
+          "物理項目名": "diseases_code",
+          "type": "char",
+          "length": 7,
+          "PK": "○"
+        },
+        {
+          "#": 2,
+          "項目名": "標準病名",
+          "物理項目名": "diseases_name",
+          "type": "varchar",
+          "length": 255
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:37.734940"
+    },
+    "ICD10マスター": {
+      "sheet_type": "insured_ledger",
+      "table_name": "ICD10マスター",
+      "physical_name": "m_icd10",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト電算処理システム傷病コード",
+          "物理項目名": "diseases_code",
+          "type": "varchar",
+          "length": 7,
+          "PK": "○"
+        },
+        {
+          "#": 2,
+          "項目名": "ICD10区分コード",
+          "物理項目名": "icd10_kbn_code",
+          "type": "char",
+          "length": 1,
+          "PK": "○",
+          "備考": "1:基本疾患\n2:症状発現"
+        },
+        {
+          "#": 3,
+          "項目名": "ICD10コード",
+          "物理項目名": "icd10_code",
+          "type": "char",
+          "length": 5,
+          "PK": "○",
+          "備考": "本テーブルのICD10コードは、\n基本疾患 / 症状発現 のどちらのレコードも存在することに注意が必要"
+        },
+        {
+          "#": 4,
+          "項目名": "ICD10名",
+          "物理項目名": "icd10_name",
+          "type": "varchar",
+          "length": 300
+        },
+        {
+          "#": 5,
+          "項目名": "ICD10大分類コード",
+          "物理項目名": "icd10_major_code",
+          "type": "char",
+          "length": 7
+        },
+        {
+          "#": 6,
+          "項目名": "ICD10大分類名",
+          "物理項目名": "icd10_major_name",
+          "type": "varchar",
+          "length": 300
+        },
+        {
+          "#": 7,
+          "項目名": "ICD10中分類コード",
+          "物理項目名": "icd10_medium_code",
+          "type": "char",
+          "length": 7
+        },
+        {
+          "#": 8,
+          "項目名": "ICD10中分類名",
+          "物理項目名": "icd10_medium_name",
+          "type": "varchar",
+          "length": 300
+        },
+        {
+          "#": 9,
+          "項目名": "ICD10小分類コード",
+          "物理項目名": "icd10_sub_code",
+          "type": "char",
+          "length": 3
+        },
+        {
+          "#": 10,
+          "項目名": "ICD10小分類名",
+          "物理項目名": "icd10_sub_name",
+          "type": "varchar",
+          "length": 300
+        },
+        {
+          "#": 11,
+          "項目名": "ICD10細分類コード",
+          "物理項目名": "icd10_subdiv_code",
+          "type": "char",
+          "length": 4
+        },
+        {
+          "#": 12,
+          "項目名": "ICD10細分類名",
+          "物理項目名": "icd10_subdiv_name",
+          "type": "varchar",
+          "length": 300
+        },
+        {
+          "#": 13,
+          "項目名": "ICD10細々分類コード",
+          "物理項目名": "icd10_subdiv2_code",
+          "type": "char",
+          "length": 5
+        },
+        {
+          "#": 14,
+          "項目名": "ICD10細々分類名",
+          "物理項目名": "icd10_subdiv2_name",
+          "type": "varchar",
+          "length": 300
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:37.886157"
+    },
+    "レセ電診療行為マスター": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセ電診療行為マスター",
+      "physical_name": "m_med_treat",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト電算処理システム診療行為コード",
+          "物理項目名": "medical_practice_code",
+          "type": "varchar",
+          "length": 9,
+          "PK": "○"
+        },
+        {
+          "#": 2,
+          "項目名": "点数識別",
+          "物理項目名": "points_shikibetsu",
+          "type": "char",
+          "length": 1,
+          "備考": "「新又は現点数」に設定した点数等の種別を表す。\n１：金額\n３：点数（プラス）\n４：購入価格（点数）\n５：％加算\n６：％減算\n７：減点診療行為\n８：点数（マイナス）\n点数識別の詳細は「別紙７－１」のとおりである。"
+        },
+        {
+          "#": 3,
+          "項目名": "点数",
+          "物理項目名": "points",
+          "type": "numeric",
+          "length": "-",
+          "備考": "レセプト電算処理システム 電子レセプトの作成手引き別紙１９の「新又は現点数」に準ずる。"
+        },
+        {
+          "#": 4,
+          "項目名": "標準化診療行為名",
+          "物理項目名": "medical_practice_name",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 5,
+          "項目名": "バージョンコード",
+          "物理項目名": "version_code",
+          "type": "varchar",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 6,
+          "項目名": "コード表用番号_章",
+          "物理項目名": "chn_shou",
+          "type": "char",
+          "length": 1
+        },
+        {
+          "#": 7,
+          "項目名": "コード表用番号_部",
+          "物理項目名": "chn_bu",
+          "type": "char",
+          "length": 2
+        },
+        {
+          "#": 8,
+          "項目名": "コード表用番号_区分番号",
+          "物理項目名": "chn_kbn_no",
+          "type": "char",
+          "length": 3
+        },
+        {
+          "#": 9,
+          "項目名": "コード表用番号_枝番",
+          "物理項目名": "chn_branch_no",
+          "type": "char",
+          "length": 2
+        },
+        {
+          "#": 10,
+          "項目名": "コード表用番号_項番",
+          "物理項目名": "chn_item_no",
+          "type": "char",
+          "length": 2
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:38.054025"
+    },
+    "レセ電医薬品マスター": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセ電医薬品マスター",
+      "physical_name": "m_drug_rece",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト電算処理システム医薬品コード",
+          "物理項目名": "drug_code",
+          "type": "char",
+          "length": 9,
+          "PK": "○",
+          "備考": "6から始まるレセプト医薬品コード9桁"
+        },
+        {
+          "#": 2,
+          "項目名": "生物学的製剤コード",
+          "物理項目名": "seibutsugakuteki_seizai_code",
+          "type": "char",
+          "length": 1,
+          "備考": "0:生物学的製剤加算対象品目以外\n1:生物学的製剤加算対象品目"
+        },
+        {
+          "#": 3,
+          "項目名": "後発品コード",
+          "物理項目名": "kouhatsuhin_code",
+          "type": "char",
+          "length": 1,
+          "備考": "医科点数表等に規定する加算等の算定対象となる後発医薬品であるか否かを表す\n0:後発医薬品以外\n1:後発医薬品"
+        },
+        {
+          "#": 4,
+          "項目名": "剤形コード",
+          "物理項目名": "zaikei_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:内用薬\n3:その他\n4:注射薬\n6:外用薬\n8:歯科用薬剤"
+        },
+        {
+          "#": 5,
+          "項目名": "薬価基準収載医薬品コード",
+          "物理項目名": "yakka_code",
+          "type": "varchar",
+          "length": 12,
+          "備考": "当該医薬品の薬価基準収載医薬品コードを表す"
+        },
+        {
+          "#": 6,
+          "項目名": "薬効_細分類コード",
+          "物理項目名": "yakkou_subdiv_code",
+          "type": "char",
+          "length": 5,
+          "備考": "薬価基準収載医薬品コードの1桁目～4桁目"
+        },
+        {
+          "#": 7,
+          "項目名": "バージョンコード",
+          "物理項目名": "version_code",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 8,
+          "項目名": "単位漢字名称",
+          "物理項目名": "tani_kanji_name",
+          "type": "varchar",
+          "length": 6,
+          "備考": "単位の名称"
+        },
+        {
+          "#": 9,
+          "項目名": "新又は現金額－金額種別コード",
+          "物理項目名": "price_shubetsu_code",
+          "type": "char",
+          "length": 1,
+          "備考": "「新又は現金額」に設定した金額等の種別を表す\n1:金額\n3:薬剤使用量省略(歯科に限る)\n4:除算金額(金額を10で除す)\n5:乗算金額（金額を10で乗ずる）\n7:減点"
+        },
+        {
+          "#": 10,
+          "項目名": "新又は現金額",
+          "物理項目名": "price",
+          "type": "numeric",
+          "length": "-",
+          "備考": "小数点2桁までの薬価\n医薬品は所定単位の投与量から点数を計算するため、医薬品の規格単位を最小単位にした金額を設定する。ただし、新又は現金額－金額種別コードが「4:除算金額(金額を10で除す)」「5:乗算金額（金額を10で乗ずる）」の場合は、除算・乗算する前の金額を設定する。"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:38.162785"
+    },
+    "医薬品基本マスター": {
+      "sheet_type": "insured_ledger",
+      "table_name": "医薬品基本マスター",
+      "physical_name": "m_drug_main",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト電算処理システム医薬品コード",
+          "物理項目名": "drug_code",
+          "type": "char",
+          "length": 9,
+          "PK": "○"
+        },
+        {
+          "#": 2,
+          "項目名": "YJコード",
+          "物理項目名": "yj_code",
+          "type": "varchar",
+          "length": 12,
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "薬価基準収載医薬品コード",
+          "物理項目名": "yakka_code",
+          "type": "varchar",
+          "length": 12
+        },
+        {
+          "#": 4,
+          "項目名": "ブランド名",
+          "物理項目名": "brand_name",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 5,
+          "項目名": "一般名",
+          "物理項目名": "ippan_name",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 6,
+          "項目名": "医薬品名",
+          "物理項目名": "drug_name",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 7,
+          "項目名": "規格単位",
+          "物理項目名": "kikaku_tani",
+          "type": "varchar",
+          "length": 255
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:38.263059"
+    },
+    "医薬品成分マスター": {
+      "sheet_type": "insured_ledger",
+      "table_name": "医薬品成分マスター",
+      "physical_name": "m_drug_ingredient",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト電算処理システム医薬品コード",
+          "物理項目名": "drug_code",
+          "type": "char",
+          "length": 9,
+          "PK": "○"
+        },
+        {
+          "#": 2,
+          "項目名": "YJコード",
+          "物理項目名": "yj_code",
+          "type": "varchar",
+          "length": 12,
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "成分コード",
+          "物理項目名": "seibun_code",
+          "type": "varchar",
+          "length": 8,
+          "PK": "○"
+        },
+        {
+          "#": 4,
+          "項目名": "成分名",
+          "物理項目名": "seibun_name",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 5,
+          "項目名": "基準単位量",
+          "物理項目名": "kijun_tani_ryou",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 6,
+          "項目名": "基準単位名",
+          "物理項目名": "kijun_tani_name",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 7,
+          "項目名": "成分単位量",
+          "物理項目名": "seibun_tani_ryou",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 8,
+          "項目名": "成分単位名",
+          "物理項目名": "seibun_tani_name",
+          "type": "varchar",
+          "length": 255
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:38.446230"
+    },
+    "医薬品ATC分類（EphMRA）マスター": {
+      "sheet_type": "insured_ledger",
+      "table_name": "医薬品ATC分類（EphMRA）マスター",
+      "physical_name": "m_drug_ephmra_atc",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト電算処理システム医薬品コード",
+          "物理項目名": "drug_code",
+          "type": "char",
+          "length": 9,
+          "PK": "○"
+        },
+        {
+          "#": 2,
+          "項目名": "ATC_分類コード",
+          "物理項目名": "atc_code",
+          "type": "char",
+          "length": 5,
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "ATC_分類名",
+          "物理項目名": "atc_name",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 4,
+          "項目名": "ATC_大分類コード",
+          "物理項目名": "atc_major_code",
+          "type": "char",
+          "length": 1
+        },
+        {
+          "#": 5,
+          "項目名": "ATC_大分類名",
+          "物理項目名": "atc_major_name",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 6,
+          "項目名": "ATC_中分類コード",
+          "物理項目名": "atc_medium_code",
+          "type": "char",
+          "length": 3
+        },
+        {
+          "#": 7,
+          "項目名": "ATC_中分類名",
+          "物理項目名": "atc_medium_name",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 8,
+          "項目名": "ATC_小分類コード",
+          "物理項目名": "atc_sub_code",
+          "type": "char",
+          "length": 4
+        },
+        {
+          "#": 9,
+          "項目名": "ATC_小分類名",
+          "物理項目名": "atc_sub_name",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 10,
+          "項目名": "ATC_細分類コード",
+          "物理項目名": "atc_subdiv_code",
+          "type": "char",
+          "length": 5
+        },
+        {
+          "#": 11,
+          "項目名": "ATC_細分類名",
+          "物理項目名": "atc_subdiv_name",
+          "type": "varchar",
+          "length": 255
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:38.569629"
+    },
+    "医薬品ATC分類（WHO）マスター": {
+      "sheet_type": "insured_ledger",
+      "table_name": "医薬品ATC分類（WHO）マスター",
+      "physical_name": "m_drug_who_atc",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト電算処理システム医薬品コード",
+          "物理項目名": "drug_code",
+          "type": "char",
+          "length": 9,
+          "PK": "○"
+        },
+        {
+          "#": 2,
+          "項目名": "ATC_分類コード",
+          "物理項目名": "atc_code",
+          "type": "char",
+          "length": 7,
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "ATC_分類名",
+          "物理項目名": "atc_name",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 4,
+          "項目名": "ATC_大分類コード",
+          "物理項目名": "atc_major_code",
+          "type": "char",
+          "length": 1
+        },
+        {
+          "#": 5,
+          "項目名": "ATC_大分類名",
+          "物理項目名": "atc_major_name",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 6,
+          "項目名": "ATC_中分類コード",
+          "物理項目名": "atc_medium_code",
+          "type": "char",
+          "length": 3
+        },
+        {
+          "#": 7,
+          "項目名": "ATC_中分類名",
+          "物理項目名": "atc_medium_name",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 8,
+          "項目名": "ATC_小分類コード",
+          "物理項目名": "atc_sub_code",
+          "type": "char",
+          "length": 4
+        },
+        {
+          "#": 9,
+          "項目名": "ATC_小分類名",
+          "物理項目名": "atc_sub_name",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 10,
+          "項目名": "ATC_細分類コード",
+          "物理項目名": "atc_subdiv_code",
+          "type": "char",
+          "length": 5
+        },
+        {
+          "#": 11,
+          "項目名": "ATC_細分類名",
+          "物理項目名": "atc_subdiv_name",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 12,
+          "項目名": "ATC_細々分類コード",
+          "物理項目名": "atc_detail_code",
+          "type": "char",
+          "length": 7
+        },
+        {
+          "#": 13,
+          "項目名": "ATC_細々分類名",
+          "物理項目名": "atc_detail_name",
+          "type": "varchar",
+          "length": 255
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:38.728604"
+    },
+    "調剤行為マスター": {
+      "sheet_type": "insured_ledger",
+      "table_name": "調剤行為マスター",
+      "physical_name": "m_dispense",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト電算処理システム調剤行為コード",
+          "物理項目名": "dispensing_code",
+          "type": "char",
+          "length": 9,
+          "PK": "○"
+        },
+        {
+          "#": 2,
+          "項目名": "標準化調剤行為名",
+          "物理項目名": "dispensing_name",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 3,
+          "項目名": "バージョンコード",
+          "物理項目名": "version_code",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:38.876613"
+    },
+    "特定器材マスター": {
+      "sheet_type": "insured_ledger",
+      "table_name": "特定器材マスター",
+      "physical_name": "m_spec_equip",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "特定器材コード",
+          "物理項目名": "specific_equipment_code",
+          "type": "char",
+          "length": 9,
+          "PK": "○",
+          "備考": "区分：特定器材コードを表す「７」を設定する\n番号：特定器材ごとに重複しない番号を設定する\nなお、先頭８から始まるコード（「８＊＊＊＊＊＊＊」）は労災レセプト電算処理マスター専用のコードである"
+        },
+        {
+          "#": 2,
+          "項目名": "基本漢字名称",
+          "物理項目名": "specific_equipment_name",
+          "type": "varchar",
+          "length": 255,
+          "備考": "漢字：１５０文字\n材料価格基準等に収載する 「名称」を表す\n基本漢字名称の設定基準 は「別紙５－３」 のとおりである"
+        },
+        {
+          "#": 3,
+          "項目名": "特定器材名・規格名－漢字名称",
+          "物理項目名": "specific_equipment_name_kanji",
+          "type": "varchar",
+          "length": 32,
+          "備考": "漢字：３２文字\n特定器材名と規格名を組み合わせた名称が３２文字を超える場合は、省略した名称を表す"
+        },
+        {
+          "#": 4,
+          "項目名": "単位コード",
+          "物理項目名": "tani_code",
+          "type": "varchar",
+          "length": 3,
+          "備考": "単位コードは「別紙４－１」のとおりである\n単位を設定していない場合は「０」を設定する"
+        },
+        {
+          "#": 5,
+          "項目名": "単位漢字名称",
+          "物理項目名": "tani_kanji_name",
+          "type": "varchar",
+          "length": 6,
+          "備考": "漢字：６文字\n未使用の場合：省略"
+        },
+        {
+          "#": 6,
+          "項目名": "新又は現金額－金額種別",
+          "物理項目名": "price_type",
+          "type": "char",
+          "length": 1,
+          "備考": "「新又は現金額」に設定した金額等の種別を表す\n１：金額（整数部 １０ 桁、小数部２桁）\n２：購入価格\n５：％加算\n９：乗算割合\n金額種別の詳細は「別紙５－１」のとおりである"
+        },
+        {
+          "#": 7,
+          "項目名": "新又は現金額",
+          "物理項目名": "price",
+          "type": "numeric",
+          "length": "-",
+          "備考": "整数部「１０桁」、小数点「１桁」、小数部「２桁」の組み合わせで設定する"
+        },
+        {
+          "#": 8,
+          "項目名": "年齢加算区分コード",
+          "物理項目名": "age_add_kbn_code",
+          "type": "char",
+          "length": 1,
+          "備考": "当該特定器材が年齢加算（胸部又は腹部単純撮影の乳幼児加算及びフィルム料）の加算対象であるか否かを表す\n０：年齢加算に関係のない特定器材\n１：年齢加算自体又は年齢加算を算定可能な特定器材"
+        },
+        {
+          "#": 9,
+          "項目名": "酸素等区分コード",
+          "物理項目名": "o2_kbn_code",
+          "type": "char",
+          "length": 1,
+          "備考": "酸素又は窒素に関するものであるか否かを表す\n０：「１」から「９」以外の特定器材\n１：酸素補正率及び高気圧酸素加算\n２：定置式液化酸素貯槽（ＣＥ）\n３：可搬式液化酸素容器（ＬＧＣ）\n４：大型ボンベ\n５：小型ボンベ\n９：窒素"
+        },
+        {
+          "#": 10,
+          "項目名": "上限点数",
+          "物理項目名": "max_point",
+          "type": "integer",
+          "length": "-",
+          "備考": "算定可能な特定器材（眼科学的検査用インスタントフィルム）の上限点数を表す\nなお、上限点数に制限がない場合は「０」を設定する"
+        },
+        {
+          "#": 11,
+          "項目名": "バージョンコード",
+          "物理項目名": "version_code",
+          "type": "varchar",
+          "length": 7,
+          "備考": "YYYY/MM"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:38.987747"
+    },
+    "レセ電歯科診療行為マスター": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセ電歯科診療行為マスター",
+      "physical_name": "m_dental_treat",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト電算処理システム歯科診療行為コード",
+          "物理項目名": "dental_practice_code",
+          "type": "char",
+          "length": 9,
+          "PK": "○"
+        },
+        {
+          "#": 2,
+          "項目名": "標準化歯科診療行為名",
+          "物理項目名": "dental_practice_name",
+          "type": "varchar",
+          "length": 255
+        },
+        {
+          "#": 3,
+          "項目名": "告示番号－区分コード",
+          "物理項目名": "notification_no_kbn_code",
+          "type": "char",
+          "length": 1
+        },
+        {
+          "#": 4,
+          "項目名": "告示番号－区分番号",
+          "物理項目名": "notification_no_kbn_no",
+          "type": "varchar",
+          "length": 3
+        },
+        {
+          "#": 5,
+          "項目名": "告示番号－枝番",
+          "物理項目名": "notification_no_edaban",
+          "type": "varchar",
+          "length": 2
+        },
+        {
+          "#": 6,
+          "項目名": "告示番号－項番",
+          "物理項目名": "notification_no_kouban",
+          "type": "varchar",
+          "length": 2
+        },
+        {
+          "#": 7,
+          "項目名": "点数識別",
+          "物理項目名": "points_shikibetsu",
+          "type": "char",
+          "length": 1,
+          "備考": "「新又は現点数」に設定した点数等の種別を表す。\n１：金額\n３：点数（プラス）\n４：購入価格（点数）\n５：％加算\n６：％減算\n７：減点診療行為\n８：点数（マイナス）\n点数識別の詳細は「別紙７－１」のとおりである。"
+        },
+        {
+          "#": 8,
+          "項目名": "点数",
+          "物理項目名": "points",
+          "type": "numeric"
+        },
+        {
+          "#": 9,
+          "項目名": "バージョンコード",
+          "物理項目名": "version_code",
+          "type": "varchar",
+          "length": 7,
+          "備考": "YYYY/MM"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:39.087043"
+    },
+    "レセプト(基本情報)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセプト(基本情報)",
+      "physical_name": "receipt",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト年月",
+          "物理項目名": "receipt_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 2,
+          "項目名": "仮レセプトID",
+          "物理項目名": "receipt_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 4,
+          "項目名": "レセプト種別コード",
+          "物理項目名": "receipt_shubetsu_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:医科外来\n2:医科入院\n3:調剤\n4:歯科\n6:DPC"
+        },
+        {
+          "#": 5,
+          "項目名": "入外区分コード",
+          "物理項目名": "nyugai_kbn_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:外来\n2:入院"
+        },
+        {
+          "#": 6,
+          "項目名": "入院年月日",
+          "物理項目名": "nyuin_ymd",
+          "type": "char",
+          "length": 10,
+          "備考": "YYYY/MM/DD"
+        },
+        {
+          "#": 7,
+          "項目名": "退院年月日",
+          "物理項目名": "taiin_ymd",
+          "type": "char",
+          "length": 10,
+          "備考": "YYYY/MM/DD"
+        },
+        {
+          "#": 8,
+          "項目名": "診療実日数・処方箋受付回数",
+          "物理項目名": "sinryo_nissu_shohosen_kaisu",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 9,
+          "項目名": "合計点数",
+          "物理項目名": "total_points",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 10,
+          "項目名": "公費1コード",
+          "物理項目名": "kouhi1_code",
+          "type": "varchar",
+          "length": 2,
+          "備考": "・希少な疾病の場合はマスク加工対象\n21:精神通院医療\n38:肝炎治療特別促進事業に係る医療の給付\n54:指定難病\n00:その他"
+        },
+        {
+          "#": 11,
+          "項目名": "公費2コード",
+          "物理項目名": "kouhi2_code",
+          "type": "varchar",
+          "length": 2,
+          "備考": "・希少な疾病の場合はマスク加工対象\n21:精神通院医療\n38:肝炎治療特別促進事業に係る医療の給付\n54:指定難病\n00:その他"
+        },
+        {
+          "#": 12,
+          "項目名": "請求年月",
+          "物理項目名": "claims_ym",
+          "type": "varchar",
+          "length": 7,
+          "備考": "YYYY/MM"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:39.271858"
+    },
+    "レセプト(医療機関)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセプト(医療機関)",
+      "physical_name": "receipt_medical_institution",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト年月",
+          "物理項目名": "receipt_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 2,
+          "項目名": "仮レセプトID",
+          "物理項目名": "receipt_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 4,
+          "項目名": "レセプト種別コード",
+          "物理項目名": "receipt_shubetsu_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:医科外来\n2:医科入院\n3:調剤\n4:歯科\n6:DPC"
+        },
+        {
+          "#": 5,
+          "項目名": "仮医療機関番号",
+          "物理項目名": "iryokikan_no",
+          "type": "integer",
+          "length": "-",
+          "備考": "レセプト種別 = 調剤 の場合は、処方元の医療機関の番号が入る\n（調剤薬局の番号は「レセプト(保険薬局)」参照）"
+        },
+        {
+          "#": 6,
+          "項目名": "点数表コード",
+          "物理項目名": "tensuhyou_code",
+          "type": "char",
+          "length": 1,
+          "備考": "1:医科\n3:歯科\n4:調剤\n5:施設\n6:訪問"
+        },
+        {
+          "#": 7,
+          "項目名": "診療科名コード",
+          "物理項目名": "shinryouka_name_code",
+          "type": "char",
+          "length": 2,
+          "備考": "０１ 内 科\n０２ 精 神 科\n０９ 小 児 科\n１０ 外 科\n１９ 皮 膚 科\n２０ ひ 尿 器 科\n２３ 産 婦 人 科 （ 産 科 又 は 婦 人 科 ）\n２６ 眼 科\n２７ 耳 鼻 い ん こ う 科\n３０ 放 射 線 科 （ 放 射 線 診 断 科 又 は 放 射 線 治 療 科 ）\n３１ 麻 酔 科\n３４ ア レ ル ギ ー 科\n３５ リ ウ マ チ 科\n３６ リ ハ ビ リ テ ー シ ョ ン 科\n３７ 病 理 診 断 科\n３８ 臨 床 検 査 科\n３９ 救 急 科\n０３ 神 経 科\n０４ 神 経 内 科\n０５ 呼 吸 器 科\n０６ 消 化 器 科\n０７ 胃 腸 科\n０８ 循 環 器 科\n１１ 整 形 外 科\n１２ 形 成 外 科\n１３ 美 容 外 科\n１４ 脳 神 経 外 科\n１５ 呼 吸 器 外 科\n１６ 心 臓 血 管 外 科\n１７ 小 児 外 科\n１８ 皮 膚 ひ 尿 器 科\n２１ 性 病 科\n２２ こ う 門 科\n２４ 産 科\n２５ 婦 人 科\n２８ 気 管 食 道 科\n３３ 心 療 内 科\n\n\nhttps://www.ssk.or.jp/seikyushiharai/rezept/iryokikan/download/index.files/iryokikan_in_01.pdf\nを参照。"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:39.380205"
+    },
+    "レセプト(保険薬局)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセプト(保険薬局)",
+      "physical_name": "receipt_insurance_pharmacy",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト年月",
+          "物理項目名": "receipt_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 2,
+          "項目名": "仮レセプトID",
+          "物理項目名": "receipt_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 4,
+          "項目名": "仮保険薬局番号",
+          "物理項目名": "yakkyoku_no",
+          "type": "integer",
+          "length": "-"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:39.525694"
+    },
+    "レセプト(傷病)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセプト(傷病)",
+      "physical_name": "receipt_diseases",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト年月",
+          "物理項目名": "receipt_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 2,
+          "項目名": "仮レセプトID",
+          "物理項目名": "receipt_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "行番号",
+          "物理項目名": "line_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1レセプトに対して複数の傷病が含まれるので、行番号にて識別する。"
+        },
+        {
+          "#": 4,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 5,
+          "項目名": "レセプト電算処理システム傷病コード",
+          "物理項目名": "diseases_code",
+          "type": "char",
+          "length": 7,
+          "備考": "希少な疾病の場合はマスク加工対象\n・標準病名が未コード化病名「999」の場合、かつマスタにより名称が取得できる場合には傷病コードも値をマスタの値で変換している\n・標準病名が未コード化病名「999」の場合、かつマスタにより名称が取得できるない場合には値の変換をしていない"
+        },
+        {
+          "#": 6,
+          "項目名": "主病名フラグ",
+          "物理項目名": "shubyomei_flg",
+          "type": "char",
+          "length": 1,
+          "備考": "DeSCにて「主傷病フラグ」を加工した項目。\nレセプト内に１つも主傷病フラグが立った傷病名が存在しない場合に、最初のコード化された傷病名に1のフラグを立てている。\n\nnull：未加工 または 不明\n0:主病名以外\n1:主病名"
+        },
+        {
+          "#": 7,
+          "項目名": "診療開始日",
+          "物理項目名": "sinryo_start_ymd",
+          "type": "char",
+          "length": 10,
+          "備考": "YYYY/MM/DD\n※同一コード上の傷病に係る、該当レセプト発行医療機関での診療開始日が入る"
+        },
+        {
+          "#": 8,
+          "項目名": "転帰区分コード",
+          "物理項目名": "tenki_kbn_code",
+          "type": "char",
+          "length": 1,
+          "備考": "0:        ※ブランク\n1:繰越\n2:治癒、治ゆ\n3:死亡\n4:中止（転医）\n\n※DPCレセプトの転帰区分は、\n　・出来高部分：記載通りの値\n　・包括部分：実際の値に関わらずすべて[繰越]\nが入っている"
+        },
+        {
+          "#": 9,
+          "項目名": "疑いフラグ",
+          "物理項目名": "utagai_flg",
+          "type": "char",
+          "length": 1,
+          "備考": "0:疑いなし\n1:疑いあり"
+        },
+        {
+          "#": 10,
+          "項目名": "DPC_傷病名区分コード",
+          "物理項目名": "dpc_shoubyoumei_kbn_code",
+          "type": "char",
+          "length": 2,
+          "備考": "０１ 傷病名（医療資源を最も投入した傷病名）\n０２ 副傷病名\n１１ 主傷病名\n２１ 入院の契機となった傷病名\n３１ 医療資源を２番目に投入した傷病名\n４１ 入院時併存傷病名（１）\n４２ 入院時併存傷病名（２）\n４３ 入院時併存傷病名（３）\n４４ 入院時併存傷病名（４）\n５１ 入院後発症傷病名（１）\n５２ 入院後発症傷病名（２）\n５３ 入院後発症傷病名（３）\n５４ 入院後発症傷病名（４） "
+        },
+        {
+          "#": 11,
+          "項目名": "DPC_診断群分類番号",
+          "物理項目名": "dpc_medical_group_no",
+          "type": "char",
+          "length": 14
+        },
+        {
+          "#": 12,
+          "項目名": "DPC_転帰区分コード",
+          "物理項目名": "dpc_tenki_kbn_code",
+          "type": "varchar",
+          "length": 3
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:39.643986"
+    },
+    "レセプト(歯式_傷病)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセプト(歯式_傷病)",
+      "physical_name": "receipt_tooth_type_diseases",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト年月",
+          "物理項目名": "receipt_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 2,
+          "項目名": "仮レセプトID",
+          "物理項目名": "receipt_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "行番号",
+          "物理項目名": "line_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1レセプトに対して複数の傷病が含まれるので、行番号にて識別する。"
+        },
+        {
+          "#": 4,
+          "項目名": "連番号",
+          "物理項目名": "serial_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1傷病に対して複数の歯式が含まれるので、\n連番号にて識別する。"
+        },
+        {
+          "#": 5,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 6,
+          "項目名": "歯式",
+          "物理項目名": "shishiki",
+          "type": "char",
+          "length": 6,
+          "備考": "https://www.ssk.or.jp/seikyushiharai/tensuhyo/kihonmasta/kihonmasta_09.html"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:39.830287"
+    },
+    "レセプト(歯式_コメント)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセプト(歯式_コメント)",
+      "physical_name": "receipt_tooth_type_comment",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト年月",
+          "物理項目名": "receipt_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 2,
+          "項目名": "仮レセプトID",
+          "物理項目名": "receipt_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "行番号",
+          "物理項目名": "line_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1レセプトに対して複数の傷病が含まれるので、行番号にて識別する。"
+        },
+        {
+          "#": 4,
+          "項目名": "連番号",
+          "物理項目名": "serial_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1傷病に対して複数の歯式が含まれるので、\n連番号にて識別する。"
+        },
+        {
+          "#": 5,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 6,
+          "項目名": "歯式",
+          "物理項目名": "shishiki",
+          "type": "char",
+          "length": 6,
+          "備考": "https://www.ssk.or.jp/seikyushiharai/tensuhyo/kihonmasta/kihonmasta_09.html"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:39.973018"
+    },
+    "レセプト(診療行為)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセプト(診療行為)",
+      "physical_name": "receipt_medical_practice",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト年月",
+          "物理項目名": "receipt_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 2,
+          "項目名": "仮レセプトID",
+          "物理項目名": "receipt_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "行番号",
+          "物理項目名": "line_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1レセプトに対して複数の診療行為が含まれるので、行番号にて識別する。"
+        },
+        {
+          "#": 4,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 5,
+          "項目名": "診療識別",
+          "物理項目名": "shinryo_shikibetsu",
+          "type": "char",
+          "length": 2,
+          "備考": "https://www.ssk.or.jp/seikyushiharai/rezept/iryokikan/download/index.files/iryokikan_in_01.pdf\n別表20\n\n診療識別を必要としない診療行為の場合は、記録を省略"
+        },
+        {
+          "#": 6,
+          "項目名": "レセプト電算処理システム診療行為コード",
+          "物理項目名": "medical_practice_code",
+          "type": "char",
+          "length": 9,
+          "備考": "希少な疾病に対する診療行為の場合はマスク加工対象"
+        },
+        {
+          "#": 7,
+          "項目名": "数量",
+          "物理項目名": "suryou",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 8,
+          "項目名": "点数",
+          "物理項目名": "points",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 9,
+          "項目名": "回数",
+          "物理項目名": "kaisuu",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 10,
+          "項目名": "点数識別",
+          "物理項目名": "points_shikibetsu",
+          "type": "char",
+          "length": 3,
+          "備考": "https://www.ssk.or.jp/seikyushiharai/tensuhyo/kihonmasta/index.files/master_2_20200925.pdf\n別紙７−１"
+        },
+        {
+          "#": 11,
+          "項目名": "DPC_コーディングフラグ",
+          "物理項目名": "dpc_coding_flg",
+          "type": "char",
+          "length": 3,
+          "備考": "0: DPCレセのCDレコード以外(SI)から取得した情報の場合\n1: DPCレセのCDレコードから取得した情報の場合"
+        },
+        {
+          "#": 12,
+          "項目名": "グループ種別",
+          "物理項目名": "group_shubetsu",
+          "type": "char",
+          "length": 3,
+          "備考": "診療識別でまとめられているものの明細を連番化\n\n複数の薬剤をグループとしてまとめて処方するとき、1~の連番を割り振る\nグルーピングされていないものは0"
+        },
+        {
+          "#": 13,
+          "項目名": "同時処方番号",
+          "物理項目名": "douji_shohou_no",
+          "type": "numeric",
+          "length": "-",
+          "備考": "レセプト上でアスタリスクでまとめられた医薬品、診療行為の明細を連番化\n\n処方単位で1~の連番を割り振る\n単一処方の場合は0"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:40.075817"
+    },
+    "レセプト(診療行為算定日)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセプト(診療行為算定日)",
+      "physical_name": "receipt_medical_practice_santei_ymd",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト年月",
+          "物理項目名": "receipt_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 2,
+          "項目名": "仮レセプトID",
+          "物理項目名": "receipt_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "行番号",
+          "物理項目名": "line_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1レセプトに対して複数の診療行為が含まれるので、行番号にて識別する。"
+        },
+        {
+          "#": 4,
+          "項目名": "連番号",
+          "物理項目名": "serial_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1診療行為に複数の算定日が含まれるので、\n連番号にて識別する。"
+        },
+        {
+          "#": 5,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 6,
+          "項目名": "算定日",
+          "物理項目名": "santei_ymd",
+          "type": "char",
+          "length": 10,
+          "備考": "診療行為の実施日\nYYYY/MM/DD"
+        },
+        {
+          "#": 7,
+          "項目名": "回数",
+          "物理項目名": "kaisuu",
+          "type": "numeric",
+          "length": "-"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:40.201794"
+    },
+    "レセプト(医薬品)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセプト(医薬品)",
+      "physical_name": "receipt_drug",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト年月",
+          "物理項目名": "receipt_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 2,
+          "項目名": "仮レセプトID",
+          "物理項目名": "receipt_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "行番号",
+          "物理項目名": "line_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1レセプトに対して複数の医薬品が含まれるので、行番号にて識別する。"
+        },
+        {
+          "#": 4,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 5,
+          "項目名": "診療識別",
+          "物理項目名": "shinryo_shikibetsu",
+          "type": "char",
+          "length": 2,
+          "備考": "https://www.ssk.or.jp/seikyushiharai/rezept/iryokikan/download/index.files/iryokikan_in_01.pdf\n別表20\n\n診療識別を必要としない診療行為の場合は、記録を省略"
+        },
+        {
+          "#": 6,
+          "項目名": "レセプト電算処理システム医薬品コード",
+          "物理項目名": "drug_code",
+          "type": "char",
+          "length": 9,
+          "備考": "https://www.data-index.co.jp/knowledge/detail1-1.html\n\n希少な疾病に対する医薬品の場合はマスク加工対象"
+        },
+        {
+          "#": 7,
+          "項目名": "使用量",
+          "物理項目名": "shiyouryou",
+          "type": "numeric",
+          "length": "-",
+          "備考": "1回あたりの使用量\n（記録省略 の場合0が入る）"
+        },
+        {
+          "#": 8,
+          "項目名": "点数",
+          "物理項目名": "points",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 9,
+          "項目名": "後発品コード",
+          "物理項目名": "kouhatsuhin_code",
+          "type": "char",
+          "length": 1,
+          "備考": "0:後発医薬品以外\n1:後発医薬品"
+        },
+        {
+          "#": 10,
+          "項目名": "薬価",
+          "物理項目名": "yakka",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 11,
+          "項目名": "頓服フラグ",
+          "物理項目名": "tonpuku_flg",
+          "type": "char",
+          "length": 1,
+          "備考": "0:頓服以外\n1:頓服"
+        },
+        {
+          "#": 12,
+          "項目名": "DPC_コーディングフラグ",
+          "物理項目名": "dpc_coding_flg",
+          "type": "char",
+          "length": 3,
+          "備考": "0: DPCレセのCDレコード以外(IY)から取得した情報の場合\n1: DPCレセのCDレコードから取得した情報の場合"
+        },
+        {
+          "#": 13,
+          "項目名": "グループ種別",
+          "物理項目名": "group_shubetsu",
+          "type": "char",
+          "length": 3,
+          "備考": "診療識別でまとめられているものの明細を連番化\n\n複数の薬剤をグループとしてまとめて処方するとき、1~の連番を割り振る\nグルーピングされていないものは0\n調剤レセプトの場合は調剤番号（SHレコードの「No」）を設定"
+        },
+        {
+          "#": 14,
+          "項目名": "同時処方番号",
+          "物理項目名": "douji_shohou_no",
+          "type": "numeric",
+          "length": "-",
+          "備考": "レセプト上でアスタリスクでまとめられた医薬品、診療行為の明細を連番化\n\n処方単位で1~の連番を割り振る\n単一処方の場合は0\n調剤レセプトの場合は調剤番号（SHレコードの「No」）を設定"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:40.369329"
+    },
+    "レセプト(医薬品算定日)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセプト(医薬品算定日)",
+      "physical_name": "receipt_drug_santei_ymd",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト年月",
+          "物理項目名": "receipt_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 2,
+          "項目名": "仮レセプトID",
+          "物理項目名": "receipt_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "行番号",
+          "物理項目名": "line_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1レセプトに対して複数の医薬品が含まれるので、行番号にて識別する。"
+        },
+        {
+          "#": 4,
+          "項目名": "連番号",
+          "物理項目名": "serial_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1医薬品に複数の算定日が含まれるので、\n連番後にて識別する。"
+        },
+        {
+          "#": 5,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 6,
+          "項目名": "処方日",
+          "物理項目名": "shohou_ymd",
+          "type": "varchar",
+          "length": 10,
+          "備考": "YYYY/MM/DD"
+        },
+        {
+          "#": 7,
+          "項目名": "調剤日",
+          "物理項目名": "dispensing_ymd",
+          "type": "varchar",
+          "length": 10,
+          "備考": "YYYY/MM/DD\n\n医科レセプトの場合、調剤日=処方日となる"
+        },
+        {
+          "#": 8,
+          "項目名": "回数",
+          "物理項目名": "kaisuu",
+          "type": "numeric",
+          "length": "-",
+          "備考": "内服薬：処方日数\n外用薬・注射薬：処方回数\n\n処方されたその日に受け取った数 (処方日に何日分を処方されたか)"
+        },
+        {
+          "#": 9,
+          "項目名": "グループ種別",
+          "物理項目名": "group_shubetsu",
+          "type": "numeric",
+          "length": "-",
+          "備考": "調剤　　：SHレコード.No\n調剤以外：NULL"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:40.512348"
+    },
+    "レセプト(調剤行為)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセプト(調剤行為)",
+      "physical_name": "receipt_dispensing",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト年月",
+          "物理項目名": "receipt_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 2,
+          "項目名": "仮レセプトID",
+          "物理項目名": "receipt_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "連番号",
+          "物理項目名": "serial_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1調剤行為に複数の調剤行為コードが含まれるので、連番号にて識別する。"
+        },
+        {
+          "#": 4,
+          "項目名": "レセプト電算処理システム調剤行為コード",
+          "物理項目名": "dispensing_code",
+          "type": "char",
+          "length": 9,
+          "備考": "希少な疾病に対する調剤行為の場合はマスク加工対象"
+        },
+        {
+          "#": 5,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 6,
+          "項目名": "点数",
+          "物理項目名": "points",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 7,
+          "項目名": "回数",
+          "物理項目名": "kaisuu",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 8,
+          "項目名": "加算区分コード",
+          "物理項目名": "kasan_kbn_code",
+          "type": "numeric",
+          "length": "-",
+          "備考": "加算区分＝1（基本料）：\n　調剤基本料コード、調剤基本料加算コードNのコードが時間外加算※以外\n加算区分＝2（時間外）：\n　調剤基本料コード、調剤基本料加算コードNのコードが時間外加算※の場合\n加算区分＝3（薬学管理料）：\n　薬学管理料コードN、摘要薬学管理料コードNの場合"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:40.622508"
+    },
+    "レセプト(特定器材)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセプト(特定器材)",
+      "physical_name": "receipt_specific_equipment",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト年月",
+          "物理項目名": "receipt_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 2,
+          "項目名": "仮レセプトID",
+          "物理項目名": "receipt_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "行番号",
+          "物理項目名": "line_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1レセプトに対して複数の特定器材が含まれるので、行番号にて識別する。"
+        },
+        {
+          "#": 4,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 5,
+          "項目名": "診療識別",
+          "物理項目名": "shinryo_shikibetsu",
+          "type": "char",
+          "length": 2,
+          "備考": "https://www.ssk.or.jp/seikyushiharai/rezept/iryokikan/download/index.files/iryokikan_in_01.pdf\n別表20\n\n診療識別を必要としない診療行為の場合は、記録を省略"
+        },
+        {
+          "#": 6,
+          "項目名": "レセプト電算処理システム特定器材コード",
+          "物理項目名": "specific_equipment_code",
+          "type": "char",
+          "length": 9,
+          "備考": "希少な疾病に対する特定器材の場合はマスク加工対象"
+        },
+        {
+          "#": 7,
+          "項目名": "使用量",
+          "物理項目名": "shiyouryou",
+          "type": "numeric",
+          "length": "-",
+          "備考": "記録が省略されていた場合、「0」を設定"
+        },
+        {
+          "#": 8,
+          "項目名": "DPC_コーディングフラグ",
+          "物理項目名": "dpc_coding_flg",
+          "type": "char",
+          "length": 3,
+          "備考": "0: DPCレセのCDレコード以外(TO)から取得した情報の場合\n1: DPCレセのCDレコードから取得した情報の場合"
+        },
+        {
+          "#": 9,
+          "項目名": "グループ種別",
+          "物理項目名": "group_shubetsu",
+          "type": "numeric",
+          "length": "-",
+          "備考": "診療識別でまとめられているものの明細を連番化\n\n複数の薬剤をグループとしてまとめて処方するとき、1~の連番を割り振る\nグルーピングされていないものは0"
+        },
+        {
+          "#": 10,
+          "項目名": "同時処方番号",
+          "物理項目名": "douji_shohou_no",
+          "type": "numeric",
+          "length": "-",
+          "備考": "レセプト上でアスタリスクでまとめられた特定器材の明細を連番化\n\n処方単位で1~の連番を割り振る\n単一処方の場合は0"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:40.731042"
+    },
+    "レセプト(特定器材算定日)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセプト(特定器材算定日)",
+      "physical_name": "receipt_specific_equipment_santei_ymd",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト年月",
+          "物理項目名": "receipt_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 2,
+          "項目名": "仮レセプトID",
+          "物理項目名": "receipt_id",
+          "type": "char",
+          "length": 64,
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "行番号",
+          "物理項目名": "line_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1レセプトに対して複数の特定器材が含まれるので、行番号にて識別する。"
+        },
+        {
+          "#": 4,
+          "項目名": "連番号",
+          "物理項目名": "serial_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 5,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "char",
+          "length": 64
+        },
+        {
+          "#": 6,
+          "項目名": "処方日",
+          "物理項目名": "shohou_ymd",
+          "type": "varchar",
+          "length": 10,
+          "備考": "YYYY/MM/DD"
+        },
+        {
+          "#": 7,
+          "項目名": "調剤日",
+          "物理項目名": "dispensing_ymd",
+          "type": "varchar",
+          "length": 10,
+          "備考": "YYYY/MM/DD"
+        },
+        {
+          "#": 8,
+          "項目名": "回数",
+          "物理項目名": "kaisuu",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 9,
+          "項目名": "グループ種別",
+          "物理項目名": "group_shubetsu",
+          "type": "numeric",
+          "length": "-",
+          "備考": "医科：同一レセプト内で同一点数回数でのグループ判別するための種別\n調剤：SHレコード.No\n歯科：医科と同様\nDPC ：医科と同様"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:40.883700"
+    },
+    "レセプト(歯科診療行為)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセプト(歯科診療行為)",
+      "physical_name": "receipt_dental_practice",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト年月",
+          "物理項目名": "receipt_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 2,
+          "項目名": "仮レセプトID",
+          "物理項目名": "receipt_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "行番号",
+          "物理項目名": "line_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1レセプトに対して複数の歯科診療行為が含まれるので、行番号にて識別する。"
+        },
+        {
+          "#": 4,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 5,
+          "項目名": "診療識別",
+          "物理項目名": "shinryo_shikibetsu",
+          "type": "char",
+          "length": 6,
+          "備考": "https://www.ssk.or.jp/seikyushiharai/rezept/iryokikan/download/index.files/iryokikan_in_01.pdf\n別表20\n\n診療識別を必要としない診療行為の場合は、記録を省略"
+        },
+        {
+          "#": 6,
+          "項目名": "レセプト電算処理システム歯科診療行為コード",
+          "物理項目名": "dental_practice_code",
+          "type": "char",
+          "length": 9,
+          "備考": "希少な疾病に対する医科診療行為の場合はマスク加工対象"
+        },
+        {
+          "#": 7,
+          "項目名": "数量1",
+          "物理項目名": "suryou1",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 8,
+          "項目名": "数量2",
+          "物理項目名": "suryou2",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 9,
+          "項目名": "点数",
+          "物理項目名": "points",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 10,
+          "項目名": "回数",
+          "物理項目名": "kaisuu",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 11,
+          "項目名": "グループ種別",
+          "物理項目名": "group_shubetsu",
+          "type": "char",
+          "length": 3,
+          "備考": "診療識別でまとめられているものの明細を連番化\n\n複数の薬剤をグループとしてまとめて処方するとき、1~の連番を割り振る\nグルーピングされていないものは0"
+        },
+        {
+          "#": 12,
+          "項目名": "同時処方番号",
+          "物理項目名": "douji_shohou_no",
+          "type": "numeric",
+          "length": "-",
+          "備考": "レセプト上でアスタリスクでまとめられた医薬品、診療行為の明細を連番化\n\n処方単位で1~の連番を割り振る\n単一処方の場合は0"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:41.054058"
+    },
+    "レセプト(歯科診療行為_加算)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセプト(歯科診療行為_加算)",
+      "physical_name": "receipt_dental_practice_addition",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト年月",
+          "物理項目名": "receipt_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 2,
+          "項目名": "仮レセプトID",
+          "物理項目名": "receipt_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "行番号",
+          "物理項目名": "line_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1レセプトに対して複数の歯科診療行為が含まれるので、行番号にて識別する。"
+        },
+        {
+          "#": 4,
+          "項目名": "枝番号",
+          "物理項目名": "branch_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1歯科診療行為に対して複数の加算コードが含まれるので、枝番号にて識別する。"
+        },
+        {
+          "#": 5,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 6,
+          "項目名": "加算コード",
+          "物理項目名": "kasan_code",
+          "type": "char",
+          "length": 5,
+          "備考": "https://www.ssk.or.jp/seikyushiharai/tensuhyo/kihonmasta/index.files/master_2_20200925.pdf\n別紙８"
+        },
+        {
+          "#": 7,
+          "項目名": "数量",
+          "物理項目名": "suryou",
+          "type": "numeric",
+          "length": "-"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:41.154063"
+    },
+    "レセプト(歯科診療行為算定日)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセプト(歯科診療行為算定日)",
+      "physical_name": "receipt_dental_practice_santei_ymd",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト年月",
+          "物理項目名": "receipt_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 2,
+          "項目名": "仮レセプトID",
+          "物理項目名": "receipt_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "行番号",
+          "物理項目名": "line_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1レセプトに対して複数の歯科診療行為が含まれるので、行番号にて識別する。"
+        },
+        {
+          "#": 4,
+          "項目名": "連番号",
+          "物理項目名": "serial_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1歯科診療行為に複数の算定日が含まれるので、連番号にて識別する。"
+        },
+        {
+          "#": 5,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 6,
+          "項目名": "算定日",
+          "物理項目名": "santei_ymd",
+          "type": "char",
+          "length": 10
+        },
+        {
+          "#": 7,
+          "項目名": "回数",
+          "物理項目名": "kaisuu",
+          "type": "numeric",
+          "length": "-"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:41.267033"
+    },
+    "レセプト(医科診療明細_歯科)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセプト(医科診療明細_歯科)",
+      "physical_name": "receipt_ika_medical_practice_detail",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト年月",
+          "物理項目名": "receipt_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 2,
+          "項目名": "仮レセプトID",
+          "物理項目名": "receipt_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "行番号",
+          "物理項目名": "line_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1レセプトに対して複数の医科診療明細が含まれるので、行番号にて識別する。"
+        },
+        {
+          "#": 4,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 5,
+          "項目名": "診療識別",
+          "物理項目名": "shinryo_shikibetsu",
+          "type": "char",
+          "length": 6,
+          "備考": "https://www.ssk.or.jp/seikyushiharai/rezept/iryokikan/download/index.files/iryokikan_in_01.pdf\n別表20\n\n診療識別を必要としない診療行為の場合は、記録を省略"
+        },
+        {
+          "#": 6,
+          "項目名": "レセプト電算処理システム診療行為コード",
+          "物理項目名": "medical_practice_code",
+          "type": "char",
+          "length": 9,
+          "備考": "希少な疾病に対する診療行為の場合はマスク加工対象"
+        },
+        {
+          "#": 7,
+          "項目名": "数量",
+          "物理項目名": "suryou",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 8,
+          "項目名": "点数",
+          "物理項目名": "points",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 9,
+          "項目名": "回数",
+          "物理項目名": "kaisuu",
+          "type": "numeric",
+          "length": "-"
+        },
+        {
+          "#": 10,
+          "項目名": "点数識別",
+          "物理項目名": "points_shikibetsu",
+          "type": "char",
+          "length": 1,
+          "備考": "https://www.ssk.or.jp/seikyushiharai/tensuhyo/kihonmasta/index.files/master_2_20211216.pdf\n別紙７−１"
+        },
+        {
+          "#": 11,
+          "項目名": "グループ種別",
+          "物理項目名": "group_shubetsu",
+          "type": "char",
+          "length": 3,
+          "備考": "診療識別でまとめられているものの明細を連番化\n\n複数の薬剤をグループとしてまとめて処方するとき、1~の連番を割り振る\nグルーピングされていないものは0"
+        },
+        {
+          "#": 12,
+          "項目名": "同時処方番号",
+          "物理項目名": "douji_shohou_no",
+          "type": "numeric",
+          "length": "-",
+          "備考": "レセプト上でアスタリスクでまとめられた医薬品、診療行為の明細を連番化\n\n処方単位で1~の連番を割り振る\n単一処方の場合は0"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:41.418402"
+    },
+    "レセプト(医科診療明細算定日_歯科)": {
+      "sheet_type": "insured_ledger",
+      "table_name": "レセプト(医科診療明細算定日_歯科)",
+      "physical_name": "receipt_ika_medical_practice_detail_santei_ymd",
+      "comment": null,
+      "columns": [
+        {
+          "#": 1,
+          "項目名": "レセプト年月",
+          "物理項目名": "receipt_ym",
+          "type": "char",
+          "length": 7,
+          "備考": "YYYY/MM"
+        },
+        {
+          "#": 2,
+          "項目名": "仮レセプトID",
+          "物理項目名": "receipt_id",
+          "type": "integer",
+          "length": "-",
+          "PK": "○"
+        },
+        {
+          "#": 3,
+          "項目名": "行番号",
+          "物理項目名": "line_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1レセプトに対して複数の医科診療明細が含まれるので、行番号にて識別する。"
+        },
+        {
+          "#": 4,
+          "項目名": "連番号",
+          "物理項目名": "serial_no",
+          "type": "integer",
+          "length": "-",
+          "PK": "○",
+          "備考": "1医科診療明細に対して複数の算定日が含まれるので、連番号で識別する。"
+        },
+        {
+          "#": 5,
+          "項目名": "仮個人ID",
+          "物理項目名": "kojin_id",
+          "type": "integer",
+          "length": "-"
+        },
+        {
+          "#": 6,
+          "項目名": "算定日",
+          "物理項目名": "santei_ymd",
+          "type": "char",
+          "length": 10,
+          "備考": "YYYY/MM/DD"
+        },
+        {
+          "#": 7,
+          "項目名": "回数",
+          "物理項目名": "kaisuu",
+          "type": "numeric",
+          "length": "-"
+        }
+      ],
+      "processed_at": "2025-03-02T08:35:41.555530"
+    }
+  },
+  "failed_sheets": [
+    {
+      "sheet_name": "※参考 JLAC10（健診・問診 詳細情報）",
+      "reason": "形式を判別できませんでした: 既知の形式パターンに一致しません"
+    },
+    {
+      "sheet_name": "※参考（家族ID,親子IDについて）",
+      "reason": "形式を判別できませんでした: ヘッダー行が見つかりません"
+    },
+    {
+      "sheet_name": "テーブル一覧",
+      "reason": "ヘッダー行が見つかりませんでした"
+    }
+  ],
+  "skipped_sheets": [],
+  "summary": {
+    "total_sheets": 43,
+    "processed_sheets": 41,
+    "failed_sheets": 3,
+    "skipped_sheets": 0,
+    "processed_at": "2025-03-02T08:35:41.555530"
+  }
+}

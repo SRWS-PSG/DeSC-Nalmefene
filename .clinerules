@@ -1,0 +1,85 @@
+# DeSC Project Rules
+
+## Project Patterns
+
+### Directory Structure
+- データ処理モジュールは `processing/` ディレクトリに配置
+- 分析モジュールは `analysis/` ディレクトリに配置
+- 可視化モジュールは `visualization/` ディレクトリに配置
+- 共通ユーティリティは `utils/` ディレクトリに配置
+- テストは `tests/` ディレクトリに配置
+
+### Naming Conventions
+- ファイル名はスネークケース（例: `data_processor.py`）
+- クラス名はパスカルケース（例: `DataProcessor`）
+- 関数名とメソッド名はスネークケース（例: `process_data`）
+- 定数名は大文字のスネークケース（例: `MAX_BATCH_SIZE`）
+
+### Documentation
+- 各モジュールの先頭にはドキュメント文字列を記述
+- 各関数とクラスにはドキュメント文字列を記述
+- 複雑なロジックにはインラインコメントを追加
+
+## User Preferences
+
+### Communication Style
+- 技術的な詳細を重視
+- 日本語での説明を優先
+- コードサンプルを含める
+- 視覚的な説明（図表など）を活用
+
+### Development Workflow
+- 機能ごとに個別のブランチを作成
+- コミットメッセージは明確で詳細に
+- プルリクエスト前にコードレビューを実施
+- テストを含めた開発を推奨
+
+## Known Challenges
+
+### Performance Optimization
+- 大規模データセットの処理には注意が必要
+- メモリ使用量の最適化を常に考慮
+- 並列処理の活用を検討
+
+### Cross-language Integration
+- Python、R、JavaScriptの連携には標準化されたデータ形式を使用
+- 言語間の相互運用性を確保するためのラッパーを作成
+
+## Tool Usage Patterns
+
+### Python Environment
+- venvを使用した仮想環境
+- requirements.txtによる依存関係管理
+- Pythonバージョン3.8以上を使用
+
+### R Environment
+- renvによるパッケージ管理
+- tidyverseを中心としたパッケージ群の使用
+- Rバージョン4.0以上を使用
+
+### Version Control
+- Gitを使用したバージョン管理
+- GitHubでのコラボレーション
+- セマンティックバージョニングの採用
+
+## Project Evolution
+
+### Phase 1: 基盤構築
+- 基本的なディレクトリ構造の確立
+- コアユーティリティの実装
+- 初期ドキュメントの作成
+
+### Phase 2: コア機能開発
+- データ処理モジュールの実装
+- 分析モジュールの実装
+- 可視化モジュールの実装
+
+### Phase 3: 拡張と最適化
+- パフォーマンスの最適化
+- 追加機能の実装
+- 包括的なテストの追加
+
+### Phase 4: ドキュメントと配布
+- 詳細なドキュメントの作成
+- チュートリアルとサンプルの開発
+- パッケージ化と配布

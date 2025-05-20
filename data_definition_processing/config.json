@@ -1,0 +1,37 @@
+{
+  "input_paths": {
+    "excel_file": "../master/data定義書_table定義書.xlsx",
+    "database_schema": "../master/database_schema_new.json",
+    "ai_friendly_schema": "../master/ai_friendly_database_schema.json"
+  },
+  "output_paths": {
+    "database_schema": "../master/database_schema_new.json",
+    "ai_friendly_schema": "../master/ai_friendly_database_schema.json",
+    "optimized_schema": "../master/optimized_database_schema.json"
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "excel_processing.log",
+    "console": true
+  },
+  "format_detection": {
+    "survey_definition_keywords": ["調査定義", "データ種別", "納品", "データ期間", "アンケート", "質問項目"],
+    "insured_ledger_headers": ["テーブル名", "項目名", "物理項目名", "#", "PK"]
+  },
+  "data_types": {
+    "mapping": {
+      "varchar": "varchar",
+      "char": "char",
+      "int": "integer",
+      "integer": "integer",
+      "number": "numeric",
+      "numeric": "numeric",
+      "date": "date",
+      "timestamp": "timestamp",
+      "text": "text",
+      "boolean": "boolean",
+      "float": "float",
+      "double": "double"
+    }
+  }
+}
