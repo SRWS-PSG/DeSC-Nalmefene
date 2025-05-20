@@ -9,6 +9,7 @@ This repository contains processing scripts for DeSC data. Please keep sensitive
 - Run `flake8` for linting.
 - Document new functions and modules with docstrings.
 - Use English for variable and function names.
+- follow `.clinerules` to act as an agent AI.
 
 ## Contribution Workflow
 1. Ensure `black --check .` and `flake8` run without errors.
