@@ -44,11 +44,12 @@ class Config:
     DATA_ROOT_DIR = ENV_DATA_ROOT_DIR
     OUTPUT_DIR = ENV_OUTPUT_DIR
     
+    # 薬剤コード（修正版：レセコード数値型）
     DRUG_CODES = {
-        "nalmefene": "N07BB05",      # ナルメフェン (飲酒量低減)
-        "acamprosate": "N07BB03",    # アカンプロサート (断酒)
-        "disulfiram": "N07BB01",     # ジスルフィラム (断酒) 
-        "cyanamide": "3932001S1041"  # シアナミド (断酒)
+        "nalmefene": 622607601,      # ナルメフェン (飲酒量低減) - 数値型レセコード
+        "acamprosate": 622243701,    # アカンプロサート (断酒) - 数値型レセコード
+        "disulfiram": 620008676,     # ジスルフィラム (断酒) - 数値型レセコード
+        "cyanamide": 621320701         # シアナミド (断酒) - 数値型レセコード
     }
     
     # 併存疾患のICD10コード
