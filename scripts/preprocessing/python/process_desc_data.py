@@ -67,7 +67,9 @@ def load_master_data(base_dir: str) -> Dict[str, pl.DataFrame]:
     master_files = {
         "medical": "m_med_treat_all.feather",
         "disease": "m_disease.feather",
-        "drug": "m_drug.feather"
+        "drug_main": "m_drug_main.feather",
+        "drug_rece": "m_drug_rece_all.feather",
+        "drug_who_atc": "m_drug_who_atc.feather" 
     }
     
     master_data = {}
@@ -101,7 +103,7 @@ def identify_f10_2_patients(disease_files: List[str],
             "receipt_id",
             "receipt_ym",
             "diseases_code",
-            "sinryo_start_ymd"
+            "sinryo_start_ymd"  # スキーマでは YYYY/MM/DD の char 型
         ]))
         
         result = df_lazy.collect(streaming=True, n_threads=params['n_threads'])
@@ -151,13 +153,55 @@ def classify_treatment_groups(patient_df: pl.DataFrame,
             "kojin_id",
             "receipt_id",
             "receipt_ym",
-            "drug_code",
-            "drug_ymd"
+            "drug_code"  # shohou_ymd や dispensing_ymd は別テーブル
         ]))
         
-        df = df_lazy.collect(streaming=True, n_threads=params['n_threads'])
+        df_drug_info = df_lazy.collect(streaming=True, n_threads=params['n_threads'])
         
-        if not df.is_empty():
+        if not df_drug_info.is_empty():
+            # 薬剤処方日・調剤日情報を取得するために receipt_drug_santei_ymd を読み込む
+            # この処理はファイルごとに行う必要があるため、drug_files のループ内で処理する
+            # 簡単のため、ここでは drug_files からファイルパスを取得し、関連する santei_ymd ファイルを読み込む
+            # 実際には、receipt_ym に基づいて効率的に読み込む必要がある
+
+            santei_ymd_file_path = file_path.replace("receipt_drug_", "receipt_drug_santei_ymd_") # 仮のファイル名置換
+            if not os.path.exists(santei_ymd_file_path):
+                logger.warning(f"薬剤処方日ファイルが見つかりません: {santei_ymd_file_path}")
+                continue
+
+            df_santei_lazy = (pl.scan_ipc(
+                source=santei_ymd_file_path,
+                memory_map=True,
+                n_rows=params['chunk_size']
+            )
+            .filter(pl.col("kojin_id").is_in(patient_ids))
+            .select([
+                "kojin_id",
+                "receipt_id", # receipt_drug との結合キー
+                "shohou_ymd", # YYYY/MM/DD の char 型
+                "dispensing_ymd" # YYYY/MM/DD の char 型
+            ]))
+            df_santei = df_santei_lazy.collect(streaming=True, n_threads=params['n_threads'])
+
+            if df_santei.is_empty():
+                continue
+
+            # 薬剤情報と処方日情報を結合
+            # receipt_id をキーに結合するが、receipt_drug には receipt_id が直接はないため、
+            # 先に receipt_drug と receipt (基本情報) を結合しておく必要がある。
+            # ここでは簡略化のため、kojin_id と receipt_ym で近似的に結合する。
+            # より正確には、receipt_id を介した結合が望ましい。
+            
+            # drug_code と処方日を結合
+            df_merged_drug_date = df_drug_info.join(
+                df_santei.select(["kojin_id", "receipt_id", "shohou_ymd"]), # dispensing_ymd も考慮可能
+                on=["kojin_id", "receipt_id"], # receipt_id で結合
+                how="inner" 
+            )
+            
+            if df_merged_drug_date.is_empty():
+                continue
+
             reduction_codes = [Config.DRUG_CODES["nalmefene"]]
             abstinence_codes = [
                 Config.DRUG_CODES["acamprosate"],
@@ -165,15 +209,22 @@ def classify_treatment_groups(patient_df: pl.DataFrame,
                 Config.DRUG_CODES["cyanamide"]
             ]
             
-            merged_df = df.join(
+            # 患者のインデックス日と結合
+            merged_df = df_merged_drug_date.join(
                 patient_df.select(["kojin_id", "index_date"]),
                 on="kojin_id",
                 how="inner"
             )
             
+            # 日付文字列をDate型に変換して比較
+            merged_df = merged_df.with_columns([
+                pl.col("shohou_ymd").str.to_date(format="%Y/%m/%d", strict=False),
+                pl.col("index_date").str.to_date(format="%Y/%m/%d", strict=False) # index_dateも変換が必要な場合
+            ])
+
             merged_df = merged_df.filter(
-                (pl.col("drug_ymd") >= pl.col("index_date")) &
-                (pl.col("drug_ymd") <= pl.date_add(pl.col("index_date"), pl.lit(12), pl.lit("weeks")))
+                (pl.col("shohou_ymd") >= pl.col("index_date")) &
+                (pl.col("shohou_ymd") <= pl.col("index_date").dt.offset_by("12w")) # Polarsの期間加算
             )
             
             if not merged_df.is_empty():
@@ -182,12 +233,12 @@ def classify_treatment_groups(patient_df: pl.DataFrame,
                         (pl.col("drug_code").is_in(reduction_codes)).alias("is_reduction"),
                         (pl.col("drug_code").is_in(abstinence_codes)).alias("is_abstinence")
                     ])
-                    .sort(["kojin_id", "drug_ymd"])
+                    .sort(["kojin_id", "shohou_ymd"])
                     .group_by("kojin_id")
                     .agg([
                         pl.col("is_reduction").max().alias("has_reduction"),
                         pl.col("is_abstinence").max().alias("has_abstinence"),
-                        pl.col("drug_ymd").first().alias("first_drug_date")
+                        pl.col("shohou_ymd").min().alias("first_drug_date") # 最小の処方日
                     ]))
                 
                 treatment_groups.append(grouped)
@@ -237,10 +288,10 @@ def main():
     
     master_data = load_master_data(Config.DATA_ROOT_DIR)
     
-    disease_files = [os.path.join(Config.DATA_ROOT_DIR, f) 
-                   for f in os.listdir(Config.DATA_ROOT_DIR) 
-                   if f.startswith("receipt_disease") and f.endswith(".feather")]
-    
+    disease_files = [os.path.join(Config.DATA_ROOT_DIR, f)
+                   for f in os.listdir(Config.DATA_ROOT_DIR)
+                   if f.startswith("receipt_diseases") and f.endswith(".feather")] # 修正: receipt_diseases
+
     patients_df = identify_f10_2_patients(
         disease_files,
         os.path.join(Config.OUTPUT_DIR, "f10_2_patients.feather"),
@@ -251,10 +302,12 @@ def main():
         logger.error("F10.2患者が見つからないため処理を終了します")
         return
     
-    drug_files = [os.path.join(Config.DATA_ROOT_DIR, f) 
-                for f in os.listdir(Config.DATA_ROOT_DIR) 
-                if f.startswith("receipt_drug") and f.endswith(".feather")]
-    
+    # receipt_drug と receipt_drug_santei_ymd の両方が必要
+    # classify_treatment_groups 内で receipt_drug_santei_ymd も読み込むように修正済み
+    drug_files = [os.path.join(Config.DATA_ROOT_DIR, f)
+                for f in os.listdir(Config.DATA_ROOT_DIR)
+                if f.startswith("receipt_drug_") and not f.startswith("receipt_drug_santei_ymd") and f.endswith(".feather")] # receipt_drug_santei_ymd を除外
+
     treatment_groups = classify_treatment_groups(
         patients_df,
         drug_files,

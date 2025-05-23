@@ -21,6 +21,7 @@ https://docs.cline.bot/improving-your-prompting-skills/custom-instructions-libra
 # マスターデータについて
 
 `master/`フォルダには、分析や処理に必要なマスターデータと関連ドキュメントが格納されています。
+`master\optimized_database_schema.json`　が最重要なデータベースのスキーマです。
 
 ## データベース設計資料
 

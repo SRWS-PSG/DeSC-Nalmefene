@@ -444,3 +444,126 @@ import psutil
 def print_memory_usage():
     process = psutil.Process()
     print(f"Memory usage: {process.memory_info().rss / 1024 / 1024:.2f} MB")
+
+## 変数指定ガイド（DeSCデータベーススキーマ準拠）
+
+### 1. テーブル名の指定
+DeSCデータベースの各テーブルはfeatherファイル形式で保存されています。テーブル名は`optimized_database_schema.json`の`physical_name`を使用します：
+
+```python
+# 例：適用（被保険者台帳）テーブルの読み込み
+tekiyo_df = pl.read_ipc('tekiyo.feather')
+
+# 例：健診・問診データの読み込み  
+exam_df = pl.read_ipc('exam_interview_processed.feather')
+
+# 例：レセプトデータの読み込み（年月別）
+receipt_df = pl.read_ipc(f'receipt_{ym}.feather')
+```
+
+### 2. カラム名の指定
+各テーブルのカラム名は、スキーマの`columns`セクションで定義されています：
+
+```python
+# 必須カラムの例（適用テーブル）
+required_columns = [
+    'kojin_id',              # 仮個人ID（integer）
+    'birth_ym',              # 生年月（char[7]）
+    'sex_code',              # 性別コード（char[1]）
+    'observable_start_ym',   # 観察可能期間開始年月（char[7]）
+    'observable_end_ym'      # 観察可能期間終了年月（varchar[7]）
+]
+
+# 健診データの必須項目例
+exam_required = [
+    'height',                # 身長（numeric）
+    'weight',                # 体重（numeric）
+    'bmi',                   # BMI（numeric）
+    'systolic_blood_pressure', # 収縮期血圧（numeric）
+    'diastolic_blood_pressure' # 拡張期血圧（numeric）
+]
+```
+
+### 3. データ型の対応関係
+DeSCスキーマのデータ型とPolarsのデータ型の対応：
+
+```python
+# データ型マッピング
+type_mapping = {
+    'integer': pl.Int64,
+    'char': pl.Utf8,
+    'varchar': pl.Utf8,
+    'numeric': pl.Float64
+}
+
+# 型変換の例
+df = df.with_columns([
+    pl.col('kojin_id').cast(pl.Int64),
+    pl.col('birth_ym').cast(pl.Utf8),
+    pl.col('weight').cast(pl.Float64)
+])
+```
+
+### 4. リレーション（結合）の指定
+テーブル間の結合には共通のキーを使用：
+
+```python
+# 個人IDをキーとした結合
+result = (
+    tekiyo_df
+    .join(
+        exam_df,
+        on='kojin_id',
+        how='left'
+    )
+)
+
+# レセプトIDをキーとした結合
+receipt_diseases = (
+    receipt_df
+    .join(
+        diseases_df,
+        on='receipt_id',
+        how='left'
+    )
+)
+```
+
+### 5. 日付形式の処理
+DeSCの日付形式は統一されています：
+
+```python
+# 年月形式（YYYY/MM）の処理
+df = df.with_columns(
+    pl.col('receipt_ym').str.replace('/', '')  # 2023/01 → 202301
+)
+
+# 年月日形式（YYYY/MM/DD）の処理
+df = df.with_columns(
+    pl.col('santei_ymd').str.to_date(format='%Y/%m/%d')
+)
+```
+
+### 6. コード値の処理
+各種コード値の意味はコメントに記載されています：
+
+```python
+# 性別コードの処理例
+sex_mapping = {
+    '1': '男性',
+    '2': '女性'
+}
+
+df = df.with_columns(
+    pl.col('sex_code').map_dict(sex_mapping).alias('sex_name')
+)
+
+# レセプト種別コードの処理例
+receipt_type_mapping = {
+    '1': '医科外来',
+    '2': '医科入院',
+    '3': '調剤',
+    '4': '歯科',
+    '6': 'DPC'
+}
+```
