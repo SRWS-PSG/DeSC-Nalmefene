@@ -24,6 +24,9 @@ from typing import Dict, List, Set, Optional
 import psutil
 from tqdm import tqdm
 import time
+import tempfile
+import shutil
+from contextlib import contextmanager
 from utils.env_loader import DATA_ROOT_DIR as ENV_DATA_ROOT_DIR, OUTPUT_DIR as ENV_OUTPUT_DIR
 
 # Create local logs directory before setting up logging
@@ -49,6 +52,21 @@ class Config:
     STUDY_PERIOD_END = "2023-09-30"
     
     PRIMARY_WASHOUT_WEEKS = 52
+
+@contextmanager
+def temporary_directory():
+    """一時ディレクトリを作成し、処理後に必ず削除"""
+    temp_dir = tempfile.mkdtemp(prefix="f10_2_extraction_")
+    logger.info(f"一時ディレクトリを作成しました: {temp_dir}")
+    try:
+        yield temp_dir
+    finally:
+        # エラーが発生しても必ず削除
+        try:
+            shutil.rmtree(temp_dir)
+            logger.info(f"一時ディレクトリを削除しました: {temp_dir}")
+        except Exception as e:
+            logger.warning(f"一時ディレクトリの削除に失敗しました: {temp_dir}, エラー: {e}")
 
 def optimize_parameters():
     """システムリソースに基づく最適なパラメータの設定"""
@@ -123,49 +141,68 @@ def get_disease_files(disease_dir: str) -> List[str]:
 def extract_f10_2_patients(disease_files: List[str], 
                           f10_2_diseases_codes: List[str],
                           params: Dict) -> pl.DataFrame:
-    """F10.2（アルコール依存症）患者の抽出"""
+    """F10.2（アルコール依存症）患者の抽出 - メモリ効率最適化版"""
     start_time = time.time()
-    logger.info("F10.2患者の抽出を開始します")
+    logger.info("F10.2患者の抽出を開始します（最適化版）")
     
-    results = []
-    
-    logger.info("疾患ファイルの処理状況:")
-    for file_path in tqdm(disease_files, desc="疾患ファイル処理", unit="file"):
-        file_size = os.path.getsize(file_path) / (1024 * 1024)  # MB単位
-        logger.info(f"処理中: {os.path.basename(file_path)} (サイズ: {file_size:.2f} MB)")
+    with temporary_directory() as temp_dir:
+        temp_files = []
         
-        df_lazy = (pl.scan_ipc(
-            source=file_path,
-            memory_map=True,
-            n_rows=params['chunk_size']
-        )
-        .filter(pl.col("diseases_code").is_in(f10_2_diseases_codes))
-        .select([
-            "kojin_id",
-            "receipt_id",
-            "receipt_ym",
-            "diseases_code",
-            "sinryo_start_ymd",  # 診療開始日
-            "shubyomei_flg",     # 主病名フラグ
-            "tenki_kbn_code",    # 転帰区分コード
-            "utagai_flg"         # 疑いフラグ
-        ]))
+        logger.info("疾患ファイルの処理状況:")
+        for i, file_path in enumerate(tqdm(disease_files, desc="疾患ファイル処理", unit="file")):
+            file_size = os.path.getsize(file_path) / (1024 * 1024)  # MB単位
+            logger.info(f"処理中: {os.path.basename(file_path)} (サイズ: {file_size:.2f} MB)")
+            
+            df_lazy = (pl.scan_ipc(
+                source=file_path,
+                memory_map=False
+            )
+            .filter(pl.col("diseases_code").is_in(f10_2_diseases_codes))
+            .select([
+                "kojin_id",
+                "receipt_id",
+                "receipt_ym",
+                "diseases_code",
+                "sinryo_start_ymd",  # 診療開始日
+                "shubyomei_flg",     # 主病名フラグ
+                "tenki_kbn_code",    # 転帰区分コード
+                "utagai_flg"         # 疑いフラグ
+            ]))
+            
+            result = df_lazy.collect(streaming=True, n_threads=params['n_threads'])
+            
+            if not result.is_empty():
+                # Log unique disease codes found for F10.2 for verification
+                unique_codes_found = result.select(pl.col("diseases_code").unique()).to_series().to_list()
+                logger.info(f"ファイル {os.path.basename(file_path)} で見つかったF10.2関連のdiseases_code: {unique_codes_found}")
+                
+                # 中間結果を一時ファイルに保存
+                temp_file = os.path.join(temp_dir, f"temp_{i:04d}.feather")
+                result.write_ipc(temp_file, compression="zstd")
+                temp_files.append(temp_file)
+                
+                # メモリから解放
+                del result
+                gc.collect()
         
-        result = df_lazy.collect(streaming=True, n_threads=params['n_threads'])
+        if not temp_files:
+            logger.warning("F10.2患者が見つかりませんでした")
+            return pl.DataFrame()
         
-        if not result.is_empty():
-            # Log unique disease codes found for F10.2 for verification
-            unique_codes_found = result.select(pl.col("diseases_code").unique()).to_series().to_list()
-            logger.info(f"ファイル {os.path.basename(file_path)} で見つかったF10.2関連のdiseases_code: {unique_codes_found}")
-            results.append(result)
-    
-    if not results:
-        logger.warning("F10.2患者が見つかりませんでした")
-        return pl.DataFrame()
-    
-    # 全結果を結合
-    patients_df = pl.concat(results)
-    logger.info(f"抽出された延べレコード数: {len(patients_df)}")
+        # 一時ファイルから結果を読み込んで結合
+        logger.info(f"一時ファイル {len(temp_files)} 件を結合します")
+        all_results = []
+        for temp_file in temp_files:
+            temp_result = pl.read_ipc(temp_file)
+            all_results.append(temp_result)
+        
+        # 全結果を結合
+        patients_df = pl.concat(all_results)
+        logger.info(f"抽出された延べレコード数: {len(patients_df)}")
+        
+        # メモリクリーンアップ
+        del all_results
+        gc.collect()
     
     # 各患者の初回診断日（インデックス日）を特定
     index_dates = (patients_df
