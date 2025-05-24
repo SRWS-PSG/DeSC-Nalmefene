@@ -310,10 +310,21 @@ def classify_treatment_groups(patients_df: pl.DataFrame,
                       if f.startswith("receipt_drug_") and f.endswith(".feather")]
     logger.debug(f"classify_treatment_groups: 発見された薬剤ファイル数 = {len(drug_files_all)}")
     
-    # ファイルを最終更新日時でソートし、最新のものを選択（テスト用）
-    # drug_files_all.sort(key=lambda f: os.path.getmtime(f), reverse=True)
-    # drug_files_to_process = drug_files_all[:5] # テスト用に最新5ファイル (元は最初の5ファイル)
-    drug_files_to_process = drug_files_all[:5] # 元のロジックを維持 (最初の5ファイル)
+    # ファイル名から年月を抽出し、それでソートして最新のものを選択
+    def get_yyyymm_from_filename(filename):
+        # filename is like 'receipt_drug_YYYYMM.feather'
+        basename = os.path.basename(filename)
+        # Extract YYYYMM part, assuming it's always 6 digits before '.feather'
+        yyyymm_str = basename.split('_')[-1].split('.')[0]
+        try:
+            return int(yyyymm_str)
+        except ValueError:
+            logger.warning(f"Could not parse YYYYMM from filename: {filename}. Treating as oldest.")
+            return 0 # Treat unparseable names as oldest
+
+    drug_files_all.sort(key=get_yyyymm_from_filename, reverse=True)
+    # drug_files_to_process = drug_files_all[:3] # 最新3ファイルを処理対象とする -> 全てのファイルに変更
+    drug_files_to_process = drug_files_all # 全ての薬剤ファイルを処理対象とする
     logger.debug(f"classify_treatment_groups: 処理対象の薬剤ファイル数 = {len(drug_files_to_process)}")
 
     treatment_results = []
@@ -378,7 +389,7 @@ def classify_treatment_groups(patients_df: pl.DataFrame,
                 pl.col("index_date").str.to_date(format="%Y/%m/%d")
             ]).filter(
                 (pl.col("shohou_ymd") >= pl.col("index_date")) &
-                (pl.col("shohou_ymd") <= pl.col("index_date").dt.offset_by("12w"))
+                (pl.col("shohou_ymd") <= pl.col("index_date").dt.offset_by("52w")) # 120週から52週に変更
             )
             logger.debug(f"classify_treatment_groups: フィルタリング後の df_filtered shape = {df_filtered.shape}")
             
